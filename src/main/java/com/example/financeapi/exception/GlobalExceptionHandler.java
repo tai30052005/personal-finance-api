@@ -1,5 +1,6 @@
 package com.example.financeapi.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -46,6 +47,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(baseBody(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
+    }
+
+    /** Không tìm thấy tài nguyên (hoặc thuộc user khác) -> 404 Not Found. */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(baseBody(HttpStatus.NOT_FOUND, ex.getMessage()));
+    }
+
+    /**
+     * Vi phạm ràng buộc toàn vẹn dữ liệu -> 409 Conflict.
+     * Ví dụ: xóa một danh mục đang được giao dịch tham chiếu (khóa ngoại).
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(baseBody(HttpStatus.CONFLICT,
+                        "Thao tác vi phạm ràng buộc dữ liệu (có thể tài nguyên đang được sử dụng)"));
     }
 
     /** Khung response lỗi chung: timestamp, status, error, message. */
