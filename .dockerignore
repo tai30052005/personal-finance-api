@@ -1,0 +1,13 @@
+# Không gửi các thứ này vào Docker build context (build nhanh & sạch hơn)
+target/
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+.vscode/
+.claude/
+*.md
+Dockerfile
+.dockerignore
+docker-compose.yml

@@ -1,0 +1,46 @@
+# ============================================================
+#  Dựng toàn bộ hệ thống bằng 1 lệnh:  docker compose up
+#  Gồm 2 service:
+#    - db  : PostgreSQL
+#    - app : ứng dụng Spring Boot (build từ Dockerfile)
+# ============================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: finance-db
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: finance
+      POSTGRES_PASSWORD: finance
+    ports:
+      - "5432:5432"          # mở cổng ra máy thật (tiện xem DB bằng tool ngoài)
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # lưu dữ liệu lâu dài, không mất khi tắt container
+    healthcheck:
+      # Kiểm tra Postgres đã sẵn sàng nhận kết nối chưa
+      test: ["CMD-SHELL", "pg_isready -U finance -d finance"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .                 # build image từ Dockerfile trong thư mục hiện tại
+    container_name: finance-app
+    depends_on:
+      db:
+        condition: service_healthy   # đợi Postgres "healthy" rồi mới khởi động app
+    environment:
+      # Các biến này override giá trị mặc định trong application.yml.
+      # 'db' là tên service ở trên -> trong mạng Docker, app gọi tới host 'db'.
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: finance
+      DB_USER: finance
+      DB_PASSWORD: finance
+      JWT_SECRET: change-me-to-a-long-random-secret-key-at-least-32-bytes
+    ports:
+      - "8080:8080"          # truy cập app tại http://localhost:8080
+
+volumes:
+  pgdata:                    # khai báo volume lưu dữ liệu Postgres
