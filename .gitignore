@@ -1,0 +1,30 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Eclipse / VS Code
+.classpath
+.project
+.settings/
+.vscode/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Spring Boot local overrides (chứa secret)
+application-local.yml
+application-local.yaml
+*.env
+
+# Claude Code local settings
+.claude/

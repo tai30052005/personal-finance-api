@@ -1,0 +1,11 @@
+# Chuẩn hóa line-ending: file text dùng LF trong repo, tự convert theo OS khi checkout
+* text=auto eol=lf
+
+# File Windows-specific giữ CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# File nhị phân không đụng tới
+*.jar binary
+*.png binary
+*.jpg binary

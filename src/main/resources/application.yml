@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: personal-finance-api
+
+  # ===== Kết nối cơ sở dữ liệu (PostgreSQL) =====
+  # Dùng biến môi trường với giá trị mặc định (localhost) để chạy local;
+  # khi chạy bằng Docker Compose (Bước 2) các biến này sẽ được override.
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:finance}
+    username: ${DB_USER:finance}
+    password: ${DB_PASSWORD:finance}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # 'validate': Hibernate chỉ kiểm tra entity khớp với schema, KHÔNG tự sửa bảng.
+      # Việc tạo/đổi bảng do Flyway đảm nhiệm (an toàn cho môi trường thật).
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false   # tắt anti-pattern OSIV để tránh giữ session quá lâu
+
+  # ===== Flyway: tự chạy các script migration trong db/migration khi khởi động =====
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# ===== Cấu hình ứng dụng (JWT) — sẽ dùng ở Bước 4 =====
+app:
+  jwt:
+    # CHỈ DÙNG CHO DEV. Production phải đặt qua biến môi trường JWT_SECRET.
+    # Khóa cần đủ dài (>= 32 ký tự) cho thuật toán HMAC-SHA256.
+    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-key-at-least-32-bytes}
+    # Thời hạn token: 24 giờ (tính bằng mili-giây)
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# ===== Swagger / OpenAPI =====
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  port: 8080
