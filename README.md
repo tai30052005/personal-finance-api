@@ -1,8 +1,8 @@
-# Personal Finance Management API
+# Personal Finance Management — Full-Stack App
 
-A RESTful backend service for personal finance management, built with **Java 17** and **Spring Boot 3**. It supports user authentication with JWT, transaction tracking by category, monthly income/expense reporting, and an automatic budget-overspending alert system. The project follows a clean layered architecture with input validation, per-user data isolation, and automated tests.
+A full-stack personal finance application: a **Spring Boot 3 / Java 17** REST API plus a **React (Vite)** frontend that consumes it. It supports user authentication with JWT, transaction tracking by category, monthly income/expense reporting, and an automatic budget-overspending alert system. The backend follows a clean layered architecture with input validation, per-user data isolation, and automated tests.
 
-> Personal project for a Software Engineer Intern application — focused on clean, enterprise-style backend design.
+> Personal project for a Software Engineer Intern application — focused on clean, enterprise-style design across backend and frontend.
 
 ---
 
@@ -18,6 +18,7 @@ A RESTful backend service for personal finance management, built with **Java 17*
 - **Automated tests** — JUnit 5 + MockMvc running on an H2 in-memory database.
 - **Dockerized** — the whole stack (API + PostgreSQL) runs with a single command.
 - **Auto-generated API docs** — interactive Swagger UI via springdoc-openapi.
+- **React frontend** — a Vite + React SPA with login, dashboard, transaction management, and visual budget alerts, consuming the same REST API.
 
 ---
 
@@ -26,12 +27,13 @@ A RESTful backend service for personal finance management, built with **Java 17*
 | Layer | Technology |
 |---|---|
 | Language | Java 17 |
-| Framework | Spring Boot 3.3 (Web, Data JPA, Security, Validation) |
+| Backend | Spring Boot 3.3 (Web, Data JPA, Security, Validation) |
+| Frontend | React 19 + Vite, React Router, Axios |
 | Database | PostgreSQL 16 (H2 in-memory for tests) |
 | Migrations | Flyway |
 | Auth | Spring Security + JWT (jjwt) |
 | API docs | springdoc-openapi (Swagger UI) |
-| Build | Maven |
+| Build | Maven (backend), npm (frontend) |
 | Testing | JUnit 5, Spring Boot Test, MockMvc |
 | Packaging | Docker + Docker Compose |
 
@@ -41,7 +43,7 @@ A RESTful backend service for personal finance management, built with **Java 17*
 
 ```mermaid
 flowchart TD
-    Client[Client / Swagger UI] -->|HTTP + JWT| Controller
+    Client[React Frontend / Swagger UI] -->|HTTP + JWT| Controller
     subgraph Application
         Controller[Controller layer] --> Service[Service layer<br/>business logic]
         Service --> Repository[Repository layer<br/>Spring Data JPA]
@@ -73,6 +75,22 @@ Once started, open:
 - **Health check:** http://localhost:8080/api/health
 
 To stop: `docker compose down` (add `-v` to also remove the database volume).
+
+---
+
+## 💻 Frontend (React)
+
+With the backend running (Docker above), start the React app:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173** and log in. The frontend (Vite dev server on port 5173) calls the backend API on port 8080; CORS is enabled for this origin. JWT is stored in `localStorage` and attached to every request via an Axios interceptor.
+
+**Pages:** Login / Register · Dashboard with the monthly report, budget status (with red over-budget alerts), transaction list/add/delete (filtered by month), and category management.
 
 ---
 
