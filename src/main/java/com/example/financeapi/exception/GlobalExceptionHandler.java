@@ -56,6 +56,13 @@ public class GlobalExceptionHandler {
                 .body(baseBody(HttpStatus.NOT_FOUND, ex.getMessage()));
     }
 
+    /** Yêu cầu sai logic (vd bộ lọc không hợp lệ) -> 400 Bad Request. */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequest(BadRequestException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(baseBody(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
     /**
      * Vi phạm ràng buộc toàn vẹn dữ liệu -> 409 Conflict.
      * Ví dụ: xóa một danh mục đang được giao dịch tham chiếu (khóa ngoại).
