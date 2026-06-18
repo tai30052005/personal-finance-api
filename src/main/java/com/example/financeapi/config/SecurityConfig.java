@@ -75,8 +75,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
+                "http://localhost:3000",   // frontend chạy bằng Docker (Nginx)
+                "http://127.0.0.1:3000",
                 "http://localhost:5173",   // Vite dev server (mặc định)
-                "http://localhost:4173"    // Vite preview (bản build)
+                "http://127.0.0.1:5173",
+                "http://localhost:4173",   // Vite preview (bản build)
+                "http://127.0.0.1:4173"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));   // cho phép mọi header (gồm Authorization)
