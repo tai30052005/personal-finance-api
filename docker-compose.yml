@@ -1,8 +1,9 @@
 # ============================================================
 #  Dựng toàn bộ hệ thống bằng 1 lệnh:  docker compose up
-#  Gồm 2 service:
-#    - db  : PostgreSQL
-#    - app : ứng dụng Spring Boot (build từ Dockerfile)
+#  Gồm 3 service:
+#    - db       : PostgreSQL
+#    - app      : ứng dụng Spring Boot (REST API)
+#    - frontend : React build, phục vụ qua Nginx + proxy /api -> app
 # ============================================================
 
 services:
@@ -41,6 +42,15 @@ services:
       JWT_SECRET: change-me-to-a-long-random-secret-key-at-least-32-bytes
     ports:
       - "8080:8080"          # truy cập app tại http://localhost:8080
+
+  frontend:
+    build:
+      context: ./frontend    # build từ Dockerfile trong thư mục frontend
+    container_name: finance-frontend
+    depends_on:
+      - app
+    ports:
+      - "3000:80"            # mở giao diện tại http://localhost:3000
 
 volumes:
   pgdata:                    # khai báo volume lưu dữ liệu Postgres

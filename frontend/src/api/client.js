@@ -1,9 +1,11 @@
 import axios from "axios";
 
 // Tạo sẵn một "axios instance" với địa chỉ gốc của backend.
-// Mọi nơi trong app gọi API qua client này.
+// - Dev: VITE_API_URL = http://localhost:8080 (gọi trực tiếp backend, có CORS).
+// - Docker (production build): VITE_API_URL rỗng -> gọi đường dẫn tương đối "/api/...",
+//   để Nginx proxy sang backend (cùng origin -> không cần CORS).
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080",
+  baseURL: import.meta.env.VITE_API_URL || "",
 });
 
 // Interceptor REQUEST: tự đính token vào header Authorization trước mỗi request.

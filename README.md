@@ -64,23 +64,26 @@ A request carrying `Authorization: Bearer <token>` passes through `JwtAuthFilter
 docker compose up --build
 ```
 
-This will:
-1. Start a PostgreSQL container.
-2. Build and run the Spring Boot app (Flyway applies the schema migration on startup).
-3. Expose the API on port `8080`.
+This brings up **three containers**:
+1. PostgreSQL.
+2. The Spring Boot API (Flyway applies the schema migration on startup) — port `8080`.
+3. The React frontend served by Nginx — port `3000`.
 
 Once started, open:
 
+- **App (React UI):** http://localhost:3000
 - **Swagger UI:** http://localhost:8080/swagger-ui.html
 - **Health check:** http://localhost:8080/api/health
+
+In the Docker setup, Nginx serves the built frontend and proxies `/api` to the backend, so the UI and API share one origin (no CORS needed).
 
 To stop: `docker compose down` (add `-v` to also remove the database volume).
 
 ---
 
-## 💻 Frontend (React)
+## 💻 Frontend (React) — dev mode
 
-With the backend running (Docker above), start the React app:
+The frontend also runs standalone with hot-reload (separate from Docker):
 
 ```bash
 cd frontend
@@ -88,7 +91,7 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** and log in. The frontend (Vite dev server on port 5173) calls the backend API on port 8080; CORS is enabled for this origin. JWT is stored in `localStorage` and attached to every request via an Axios interceptor.
+Open **http://localhost:5173**. The Vite dev server calls the backend on port 8080 (CORS enabled for this origin). JWT is stored in `localStorage` and attached to every request via an Axios interceptor.
 
 **Pages:** Login / Register · Dashboard with the monthly report, budget status (with red over-budget alerts), transaction list/add/delete (filtered by month), and category management.
 
