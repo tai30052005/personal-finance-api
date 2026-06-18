@@ -1,0 +1,29 @@
+import client from "./client";
+
+// Gom tất cả lời gọi API tài chính vào 1 chỗ cho gọn.
+
+// ----- Categories -----
+export const getCategories = () =>
+  client.get("/api/categories").then((r) => r.data);
+export const createCategory = (body) =>
+  client.post("/api/categories", body).then((r) => r.data);
+export const deleteCategory = (id) =>
+  client.delete(`/api/categories/${id}`);
+
+// ----- Transactions -----
+export const getTransactions = (params) =>
+  client.get("/api/transactions", { params }).then((r) => r.data);
+export const createTransaction = (body) =>
+  client.post("/api/transactions", body).then((r) => r.data);
+export const deleteTransaction = (id) =>
+  client.delete(`/api/transactions/${id}`);
+
+// ----- Reports -----
+export const getMonthlyReport = (month, year) =>
+  client.get("/api/reports/monthly", { params: { month, year } }).then((r) => r.data);
+
+// ----- Budgets -----
+export const getBudgetStatus = (month, year) =>
+  client.get("/api/budgets/status", { params: { month, year } }).then((r) => r.data);
+export const setBudget = (body) =>
+  client.post("/api/budgets", body).then((r) => r.data);

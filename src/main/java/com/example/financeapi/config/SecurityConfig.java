@@ -7,6 +7,7 @@ import com.example.financeapi.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +17,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 /**
  * Cấu hình bảo mật THẬT (thay cho bản tạm permitAll ở Bước 1).
@@ -41,6 +47,8 @@ public class SecurityConfig {
         JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtUtil, userDetailsService);
 
         http
+                // Cho phép frontend (React, cổng khác) gọi API — dùng cấu hình CORS bên dưới
+                .cors(Customizer.withDefaults())
                 // API REST dùng token, không dùng session/cookie -> tắt CSRF
                 .csrf(AbstractHttpConfigurer::disable)
                 // STATELESS: server KHÔNG lưu phiên đăng nhập; mỗi request tự mang token
@@ -57,6 +65,26 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Cấu hình CORS: cho phép trình duyệt từ origin của frontend (React dev server)
+     * gọi tới API. Nếu không có, trình duyệt sẽ chặn request cross-origin.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",   // Vite dev server (mặc định)
+                "http://localhost:4173"    // Vite preview (bản build)
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));   // cho phép mọi header (gồm Authorization)
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     /**
