@@ -12,8 +12,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy mã nguồn và build (Vite dùng .env.production -> API base rỗng -> gọi /api)
+# Copy mã nguồn và build.
+# VITE_API_URL rỗng -> frontend gọi "/api/..." (đường dẫn tương đối) để Nginx proxy.
+# (Bản deploy Vercel KHÔNG dùng Dockerfile này; Vercel tự đặt VITE_API_URL = URL backend.)
 COPY . .
+ENV VITE_API_URL=""
 RUN npm run build
 
 # ---------- STAGE 2: SERVE ----------

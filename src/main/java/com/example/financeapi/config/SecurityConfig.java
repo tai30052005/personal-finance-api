@@ -4,6 +4,7 @@ import com.example.financeapi.security.CustomUserDetailsService;
 import com.example.financeapi.security.JwtAuthFilter;
 import com.example.financeapi.security.JwtUtil;
 import com.example.financeapi.security.RestAuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,6 +35,14 @@ public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+
+    /**
+     * Danh sách origin được phép gọi API (CORS), đọc từ cấu hình.
+     * Mặc định là các origin localhost; khi deploy chỉ cần đặt biến môi trường
+     * CORS_ALLOWED_ORIGINS = domain frontend production (vd https://...vercel.app).
+     */
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     public SecurityConfig(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
@@ -74,14 +83,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",   // frontend chạy bằng Docker (Nginx)
-                "http://127.0.0.1:3000",
-                "http://localhost:5173",   // Vite dev server (mặc định)
-                "http://127.0.0.1:5173",
-                "http://localhost:4173",   // Vite preview (bản build)
-                "http://127.0.0.1:4173"
-        ));
+        // Dùng "OriginPatterns" để hỗ trợ cả origin chính xác lẫn wildcard
+        // (vd "https://*.vercel.app" để bao cả các bản preview của Vercel).
+        config.setAllowedOriginPatterns(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));   // cho phép mọi header (gồm Authorization)
         config.setAllowCredentials(true);

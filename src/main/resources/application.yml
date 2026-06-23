@@ -35,10 +35,19 @@ app:
     # Thời hạn token: 24 giờ (tính bằng mili-giây)
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+  # ===== CORS =====
+  # Danh sách origin frontend được phép gọi API (ngăn cách bởi dấu phẩy).
+  # Mặc định: các origin localhost (dev). Khi DEPLOY, đặt biến môi trường
+  # CORS_ALLOWED_ORIGINS = domain frontend, vd: https://your-app.vercel.app
+  # (có thể dùng wildcard: https://*.vercel.app để bao cả bản preview).
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173}
+
 # ===== Swagger / OpenAPI =====
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
 server:
-  port: 8080
+  # Render/Heroku... cấp cổng qua biến môi trường PORT; local mặc định 8080.
+  port: ${PORT:8080}
