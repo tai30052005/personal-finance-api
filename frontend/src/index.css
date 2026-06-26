@@ -149,6 +149,24 @@ th { color: var(--muted); font-weight: 600; }
 .chart-box { background: var(--bg); border-radius: 10px; padding: 14px; }
 .chart-box h3 { font-size: 14px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
 
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal {
+  background: var(--card); border-radius: var(--radius);
+  padding: 20px; width: 100%; max-width: 420px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.modal-head h3 { margin: 0; font-size: 18px; }
+.modal-form { display: grid; gap: 4px; }
+.modal-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; margin-top: 10px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
 /* ===== Category chips ===== */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }

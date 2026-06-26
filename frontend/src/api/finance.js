@@ -15,6 +15,8 @@ export const getTransactions = (params) =>
   client.get("/api/transactions", { params }).then((r) => r.data);
 export const createTransaction = (body) =>
   client.post("/api/transactions", body).then((r) => r.data);
+export const updateTransaction = (id, body) =>
+  client.put(`/api/transactions/${id}`, body).then((r) => r.data);
 export const deleteTransaction = (id) =>
   client.delete(`/api/transactions/${id}`);
 // Tải file CSV (responseType blob để nhận dữ liệu nhị phân của file).
