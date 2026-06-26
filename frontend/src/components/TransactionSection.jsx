@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTransactions, createTransaction, deleteTransaction } from "../api/finance";
+import { getTransactions, createTransaction, deleteTransaction, exportTransactions } from "../api/finance";
 import { formatVND } from "../utils/format";
 
 // Danh sách giao dịch theo tháng + thêm + xóa.
@@ -44,9 +44,27 @@ export default function TransactionSection({ month, year, categories, reloadToke
     onChanged();
   }
 
+  // Tải file CSV giao dịch của tháng đang xem.
+  async function handleExport() {
+    const res = await exportTransactions({ month, year });
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transactions_${year}-${month}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
   return (
     <section className="card">
-      <h2>Giao dịch tháng {month}/{year}</h2>
+      <div className="section-head">
+        <h2>Giao dịch tháng {month}/{year}</h2>
+        {list.length > 0 && (
+          <button className="btn auto sm" onClick={handleExport} title="Tải file CSV">⤓ Export CSV</button>
+        )}
+      </div>
 
       <form className="inline-form" onSubmit={handleAdd}>
         <input type="number" step="0.01" min="0.01" placeholder="Số tiền" value={amount}

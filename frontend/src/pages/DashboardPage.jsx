@@ -6,6 +6,7 @@ import SummarySection from "../components/SummarySection";
 import InsightsSection from "../components/InsightsSection";
 import ChartsSection from "../components/ChartsSection";
 import BudgetSection from "../components/BudgetSection";
+import GoalsSection from "../components/GoalsSection";
 import TransactionSection from "../components/TransactionSection";
 import RecurringSection from "../components/RecurringSection";
 import CategorySection from "../components/CategorySection";
@@ -51,6 +52,7 @@ export default function DashboardPage() {
         <ChartsSection month={month} year={year} reloadToken={reloadToken} />
         <BudgetSection month={month} year={year} categories={categories}
                        reloadToken={reloadToken} onChanged={bump} />
+        <GoalsSection reloadToken={reloadToken} onChanged={bump} />
         <TransactionSection month={month} year={year} categories={categories}
                             reloadToken={reloadToken} onChanged={bump} />
         <RecurringSection categories={categories} reloadToken={reloadToken} onChanged={bump} />

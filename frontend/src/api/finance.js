@@ -17,6 +17,9 @@ export const createTransaction = (body) =>
   client.post("/api/transactions", body).then((r) => r.data);
 export const deleteTransaction = (id) =>
   client.delete(`/api/transactions/${id}`);
+// Tải file CSV (responseType blob để nhận dữ liệu nhị phân của file).
+export const exportTransactions = (params) =>
+  client.get("/api/transactions/export", { params, responseType: "blob" });
 
 // ----- Reports -----
 export const getMonthlyReport = (month, year) =>
@@ -37,6 +40,16 @@ export const deleteRecurring = (id) =>
   client.delete(`/api/recurring/${id}`);
 export const runRecurring = (id) =>
   client.post(`/api/recurring/${id}/run`).then((r) => r.data);
+
+// ----- Savings goals (mục tiêu tiết kiệm) -----
+export const getGoals = () =>
+  client.get("/api/goals").then((r) => r.data);
+export const createGoal = (body) =>
+  client.post("/api/goals", body).then((r) => r.data);
+export const deleteGoal = (id) =>
+  client.delete(`/api/goals/${id}`);
+export const contributeGoal = (id, amount) =>
+  client.post(`/api/goals/${id}/contribute`, { amount }).then((r) => r.data);
 
 // ----- Budgets -----
 export const getBudgetStatus = (month, year) =>

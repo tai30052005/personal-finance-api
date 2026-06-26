@@ -126,6 +126,8 @@ th { color: var(--muted); font-weight: 600; }
 .budget-list { display: grid; gap: 12px; margin-bottom: 16px; }
 .budget-item { background: var(--bg); border-radius: 10px; padding: 12px 14px; border: 1px solid var(--border); }
 .budget-item.over { border-color: var(--danger); background: var(--danger-bg); }
+.budget-item.done { border-color: var(--success); background: var(--success-bg); }
+.budget-item.done .bar-fill { background: var(--success); }
 .budget-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .bar { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
 .bar-fill { height: 100%; background: var(--primary); }
@@ -133,6 +135,9 @@ th { color: var(--muted); font-weight: 600; }
 .badge { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
 .badge.ok { background: var(--success-bg); color: var(--success); }
 .badge.danger { background: var(--danger-bg); color: var(--danger); }
+
+/* ===== Section header (title + action) ===== */
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
 /* ===== Insights ===== */
 .insight-list { display: grid; gap: 10px; }

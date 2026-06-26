@@ -4,7 +4,9 @@ import com.example.financeapi.dto.request.TransactionRequest;
 import com.example.financeapi.dto.response.TransactionResponse;
 import com.example.financeapi.service.TransactionService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -54,5 +57,51 @@ public class TransactionController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         transactionService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GET /api/transactions/export?month=&year= — xuất giao dịch ra file CSV.
+     * Trả về file đính kèm (attachment) để trình duyệt tải về.
+     */
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportCsv(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Long categoryId) {
+
+        List<TransactionResponse> list = transactionService.search(month, year, categoryId);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Date,Category,Type,Amount,Note\n");
+        for (TransactionResponse t : list) {
+            sb.append(t.occurredAt()).append(',')
+              .append(csv(t.categoryName())).append(',')
+              .append(t.categoryType()).append(',')
+              .append(t.amount()).append(',')
+              .append(csv(t.note())).append('\n');
+        }
+
+        // Prepend BOM (EF BB BF) để Excel mở file UTF-8 đúng tiếng Việt có dấu.
+        byte[] csvBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] bom = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
+        byte[] body = new byte[bom.length + csvBytes.length];
+        System.arraycopy(bom, 0, body, 0, bom.length);
+        System.arraycopy(csvBytes, 0, body, bom.length, csvBytes.length);
+
+        String filename = "transactions" + (month != null && year != null ? ("_" + year + "-" + month) : "") + ".csv";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(body);
+    }
+
+    /** Escape 1 ô CSV: nếu chứa dấu phẩy/nháy/xuống dòng thì bọc trong nháy kép. */
+    private String csv(String value) {
+        if (value == null) return "";
+        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 }
