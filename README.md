@@ -4,6 +4,10 @@ A full-stack personal finance application: a **Spring Boot 3 / Java 17** REST AP
 
 > Personal project for a Software Engineer Intern application — focused on clean, enterprise-style design across backend and frontend.
 
+**🔗 Live demo:** https://personal-finance-api-taupe.vercel.app — sign in with `demo@finance.local` / `demo1234`.
+
+> Hosted on free tiers (Vercel + Render + Neon). The backend sleeps after inactivity, so the **first request may take ~30–50s** to wake up.
+
 ---
 
 ## ✨ Key Features
