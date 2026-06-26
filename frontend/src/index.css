@@ -134,6 +134,11 @@ th { color: var(--muted); font-weight: 600; }
 .badge.ok { background: var(--success-bg); color: var(--success); }
 .badge.danger { background: var(--danger-bg); color: var(--danger); }
 
+/* ===== Charts ===== */
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.chart-box { background: var(--bg); border-radius: 10px; padding: 14px; }
+.chart-box h3 { font-size: 14px; margin: 0 0 10px; color: var(--muted); font-weight: 600; }
+
 /* ===== Category chips ===== */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }

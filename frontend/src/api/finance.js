@@ -21,6 +21,8 @@ export const deleteTransaction = (id) =>
 // ----- Reports -----
 export const getMonthlyReport = (month, year) =>
   client.get("/api/reports/monthly", { params: { month, year } }).then((r) => r.data);
+export const getYearlyReport = (year) =>
+  client.get("/api/reports/yearly", { params: { year } }).then((r) => r.data);
 
 // ----- Budgets -----
 export const getBudgetStatus = (month, year) =>

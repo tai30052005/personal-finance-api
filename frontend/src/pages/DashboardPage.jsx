@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { getCategories } from "../api/finance";
 import MonthPicker from "../components/MonthPicker";
 import SummarySection from "../components/SummarySection";
+import ChartsSection from "../components/ChartsSection";
 import BudgetSection from "../components/BudgetSection";
 import TransactionSection from "../components/TransactionSection";
 import CategorySection from "../components/CategorySection";
@@ -44,6 +45,7 @@ export default function DashboardPage() {
       <main className="container">
         <MonthPicker month={month} year={year} onChange={changePeriod} />
         <SummarySection month={month} year={year} reloadToken={reloadToken} />
+        <ChartsSection month={month} year={year} reloadToken={reloadToken} />
         <BudgetSection month={month} year={year} categories={categories}
                        reloadToken={reloadToken} onChanged={bump} />
         <TransactionSection month={month} year={year} categories={categories}

@@ -48,4 +48,25 @@ public interface TransactionRepository
     List<CategoryBreakdown> breakdownByCategory(@Param("userId") Long userId,
                                                 @Param("start") LocalDate start,
                                                 @Param("end") LocalDate end);
+
+    /**
+     * Tổng tiền theo TỪNG THÁNG và theo LOẠI (INCOME/EXPENSE) trong khoảng [start, end).
+     * Dùng để vẽ biểu đồ thu/chi 12 tháng.
+     *
+     * EXTRACT(MONTH FROM ...) lấy số tháng (1..12). Mỗi dòng kết quả là:
+     *   [ số tháng, loại danh mục, tổng tiền ]
+     * (Trả Object[] vì gom 3 cột khác kiểu; tầng service sẽ dựng lại thành 12 tháng.)
+     */
+    @Query("""
+            SELECT EXTRACT(MONTH FROM t.occurredAt), c.type, SUM(t.amount)
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.user.id = :userId
+              AND t.occurredAt >= :start
+              AND t.occurredAt <  :end
+            GROUP BY EXTRACT(MONTH FROM t.occurredAt), c.type
+            """)
+    List<Object[]> monthlyTotalsByType(@Param("userId") Long userId,
+                                       @Param("start") LocalDate start,
+                                       @Param("end") LocalDate end);
 }

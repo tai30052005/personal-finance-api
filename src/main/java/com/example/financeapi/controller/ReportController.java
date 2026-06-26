@@ -1,6 +1,7 @@
 package com.example.financeapi.controller;
 
 import com.example.financeapi.dto.response.MonthlyReportResponse;
+import com.example.financeapi.dto.response.YearlyReportResponse;
 import com.example.financeapi.service.ReportService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,5 +25,11 @@ public class ReportController {
     @GetMapping("/monthly")
     public MonthlyReportResponse monthly(@RequestParam int month, @RequestParam int year) {
         return reportService.monthly(month, year);
+    }
+
+    /** GET /api/reports/yearly?year= — tổng thu/chi của 12 tháng (cho biểu đồ cột). */
+    @GetMapping("/yearly")
+    public YearlyReportResponse yearly(@RequestParam int year) {
+        return reportService.yearly(year);
     }
 }
