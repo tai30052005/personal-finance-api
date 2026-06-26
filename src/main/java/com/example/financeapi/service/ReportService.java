@@ -1,6 +1,7 @@
 package com.example.financeapi.service;
 
 import com.example.financeapi.dto.response.CategoryBreakdown;
+import com.example.financeapi.dto.response.InsightsResponse;
 import com.example.financeapi.dto.response.MonthlyReportResponse;
 import com.example.financeapi.dto.response.MonthlySummary;
 import com.example.financeapi.dto.response.YearlyReportResponse;
@@ -12,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -87,6 +90,47 @@ public class ReportService {
             months.add(new MonthlySummary(m, income[m], expense[m], income[m].subtract(expense[m])));
         }
         return new YearlyReportResponse(year, months);
+    }
+
+    /**
+     * Insight: so sánh tháng hiện tại với tháng LIỀN TRƯỚC + tìm danh mục chi nhiều nhất.
+     * Tái dùng monthly() cho cả 2 tháng, rồi tính phần trăm thay đổi.
+     */
+    @Transactional(readOnly = true)
+    public InsightsResponse insights(int month, int year) {
+        MonthlyReportResponse cur = monthly(month, year);
+
+        int prevMonth = (month == 1) ? 12 : month - 1;
+        int prevYear = (month == 1) ? year - 1 : year;
+        MonthlyReportResponse prev = monthly(prevMonth, prevYear);
+
+        Double incomeChange = percentChange(prev.totalIncome(), cur.totalIncome());
+        Double expenseChange = percentChange(prev.totalExpense(), cur.totalExpense());
+
+        // Danh mục CHI nhiều nhất trong tháng hiện tại
+        CategoryBreakdown top = cur.byCategory().stream()
+                .filter(b -> b.type() == CategoryType.EXPENSE)
+                .max(Comparator.comparing(CategoryBreakdown::total))
+                .orElse(null);
+
+        return new InsightsResponse(
+                month, year,
+                cur.totalIncome(), cur.totalExpense(), cur.balance(),
+                prev.totalIncome(), prev.totalExpense(), prev.balance(),
+                incomeChange, expenseChange,
+                top != null ? top.categoryName() : null,
+                top != null ? top.total() : null);
+    }
+
+    /** % thay đổi từ 'prev' sang 'cur'. Trả null nếu prev = 0 (không tính được). */
+    private Double percentChange(BigDecimal prev, BigDecimal cur) {
+        if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+        return cur.subtract(prev)
+                .divide(prev, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue();
     }
 
     /** Cộng tổng các danh mục cùng loại (INCOME hoặc EXPENSE). */

@@ -23,6 +23,20 @@ export const getMonthlyReport = (month, year) =>
   client.get("/api/reports/monthly", { params: { month, year } }).then((r) => r.data);
 export const getYearlyReport = (year) =>
   client.get("/api/reports/yearly", { params: { year } }).then((r) => r.data);
+export const getInsights = (month, year) =>
+  client.get("/api/reports/insights", { params: { month, year } }).then((r) => r.data);
+
+// ----- Recurring transactions (giao dịch định kỳ) -----
+export const getRecurring = () =>
+  client.get("/api/recurring").then((r) => r.data);
+export const createRecurring = (body) =>
+  client.post("/api/recurring", body).then((r) => r.data);
+export const updateRecurring = (id, body) =>
+  client.put(`/api/recurring/${id}`, body).then((r) => r.data);
+export const deleteRecurring = (id) =>
+  client.delete(`/api/recurring/${id}`);
+export const runRecurring = (id) =>
+  client.post(`/api/recurring/${id}/run`).then((r) => r.data);
 
 // ----- Budgets -----
 export const getBudgetStatus = (month, year) =>

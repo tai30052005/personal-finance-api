@@ -1,5 +1,6 @@
 package com.example.financeapi.controller;
 
+import com.example.financeapi.dto.response.InsightsResponse;
 import com.example.financeapi.dto.response.MonthlyReportResponse;
 import com.example.financeapi.dto.response.YearlyReportResponse;
 import com.example.financeapi.service.ReportService;
@@ -31,5 +32,11 @@ public class ReportController {
     @GetMapping("/yearly")
     public YearlyReportResponse yearly(@RequestParam int year) {
         return reportService.yearly(year);
+    }
+
+    /** GET /api/reports/insights?month=&year= — so sánh với tháng trước + danh mục chi nhiều nhất. */
+    @GetMapping("/insights")
+    public InsightsResponse insights(@RequestParam int month, @RequestParam int year) {
+        return reportService.insights(month, year);
     }
 }

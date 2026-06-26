@@ -7,6 +7,7 @@ import com.example.financeapi.entity.User;
 import com.example.financeapi.exception.ResourceNotFoundException;
 import com.example.financeapi.repository.BudgetRepository;
 import com.example.financeapi.repository.CategoryRepository;
+import com.example.financeapi.repository.RecurringTransactionRepository;
 import com.example.financeapi.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,15 +23,18 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
     private final BudgetRepository budgetRepository;
+    private final RecurringTransactionRepository recurringRepository;
     private final CurrentUserService currentUserService;
 
     public CategoryService(CategoryRepository categoryRepository,
                            TransactionRepository transactionRepository,
                            BudgetRepository budgetRepository,
+                           RecurringTransactionRepository recurringRepository,
                            CurrentUserService currentUserService) {
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
         this.budgetRepository = budgetRepository;
+        this.recurringRepository = recurringRepository;
         this.currentUserService = currentUserService;
     }
 
@@ -77,6 +81,7 @@ public class CategoryService {
         Category category = getOwnedOrThrow(id);
         transactionRepository.deleteByCategoryId(id);
         budgetRepository.deleteByCategoryId(id);
+        recurringRepository.deleteByCategoryId(id);
         categoryRepository.delete(category);
     }
 

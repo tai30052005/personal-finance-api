@@ -2,6 +2,7 @@ package com.example.financeapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Điểm khởi đầu (entry point) của ứng dụng Spring Boot.
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *                            và các package con (com.example.financeapi.*)
  */
 @SpringBootApplication
+@EnableScheduling   // bật các tác vụ @Scheduled (giao dịch định kỳ chạy nền)
 public class FinanceApiApplication {
 
     public static void main(String[] args) {

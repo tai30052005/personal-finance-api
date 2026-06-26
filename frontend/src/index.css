@@ -134,6 +134,11 @@ th { color: var(--muted); font-weight: 600; }
 .badge.ok { background: var(--success-bg); color: var(--success); }
 .badge.danger { background: var(--danger-bg); color: var(--danger); }
 
+/* ===== Insights ===== */
+.insight-list { display: grid; gap: 10px; }
+.insight-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--bg); border-radius: 10px; padding: 10px 14px; }
+
 /* ===== Charts ===== */
 .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
 .chart-box { background: var(--bg); border-radius: 10px; padding: 14px; }
