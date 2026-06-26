@@ -14,4 +14,7 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     // Tìm ngân sách hiện có của (user, danh mục, tháng, năm) — phục vụ "đặt/cập nhật".
     Optional<Budget> findByUserIdAndCategoryIdAndMonthAndYear(
             Long userId, Long categoryId, Integer month, Integer year);
+
+    // Xóa tất cả ngân sách thuộc một danh mục (dùng khi xóa danh mục - cascade).
+    void deleteByCategoryId(Long categoryId);
 }

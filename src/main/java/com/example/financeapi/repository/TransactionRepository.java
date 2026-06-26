@@ -24,6 +24,9 @@ public interface TransactionRepository
     // Lấy 1 giao dịch nhưng phải thuộc về đúng user (cô lập dữ liệu).
     Optional<Transaction> findByIdAndUserId(Long id, Long userId);
 
+    // Xóa tất cả giao dịch thuộc một danh mục (dùng khi xóa danh mục - cascade).
+    void deleteByCategoryId(Long categoryId);
+
     /**
      * Tổng tiền theo TỪNG DANH MỤC trong khoảng [start, end) cho 1 user.
      *

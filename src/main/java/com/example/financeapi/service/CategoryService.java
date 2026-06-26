@@ -5,7 +5,9 @@ import com.example.financeapi.dto.response.CategoryResponse;
 import com.example.financeapi.entity.Category;
 import com.example.financeapi.entity.User;
 import com.example.financeapi.exception.ResourceNotFoundException;
+import com.example.financeapi.repository.BudgetRepository;
 import com.example.financeapi.repository.CategoryRepository;
+import com.example.financeapi.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,11 +20,17 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
+    private final BudgetRepository budgetRepository;
     private final CurrentUserService currentUserService;
 
     public CategoryService(CategoryRepository categoryRepository,
+                           TransactionRepository transactionRepository,
+                           BudgetRepository budgetRepository,
                            CurrentUserService currentUserService) {
         this.categoryRepository = categoryRepository;
+        this.transactionRepository = transactionRepository;
+        this.budgetRepository = budgetRepository;
         this.currentUserService = currentUserService;
     }
 
@@ -59,10 +67,16 @@ public class CategoryService {
         return CategoryResponse.from(category);
     }
 
-    /** Xóa danh mục — chỉ khi thuộc về user hiện tại. */
+    /**
+     * Xóa danh mục — chỉ khi thuộc về user hiện tại.
+     * CASCADE: xóa luôn các giao dịch và ngân sách thuộc danh mục đó trước,
+     * rồi mới xóa danh mục (tránh vi phạm khóa ngoại). Tất cả trong 1 transaction.
+     */
     @Transactional
     public void delete(Long id) {
         Category category = getOwnedOrThrow(id);
+        transactionRepository.deleteByCategoryId(id);
+        budgetRepository.deleteByCategoryId(id);
         categoryRepository.delete(category);
     }
 

@@ -19,14 +19,19 @@ export default function CategorySection({ categories, onChanged }) {
     }
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(id, name) {
+    // Xác nhận trước khi xóa — vì sẽ xóa luôn giao dịch & ngân sách của danh mục (cascade).
+    const ok = window.confirm(
+      `Xóa danh mục "${name}" sẽ xóa luôn TẤT CẢ giao dịch và ngân sách thuộc danh mục này.\n\nBạn chắc chắn chứ?`
+    );
+    if (!ok) return;
+
     setError("");
     try {
       await deleteCategory(id);
       onChanged();
     } catch (err) {
-      // Vd: xóa danh mục đang được giao dịch tham chiếu -> backend trả 409.
-      setError(err.response?.data?.message || "Không xóa được (có thể đang được sử dụng)");
+      setError(err.response?.data?.message || "Không xóa được danh mục");
     }
   }
 
@@ -49,7 +54,7 @@ export default function CategorySection({ categories, onChanged }) {
         {categories.map((c) => (
           <span key={c.id} className={"chip " + (c.type === "INCOME" ? "income" : "expense")}>
             {c.name}
-            <button className="chip-x" onClick={() => handleDelete(c.id)} title="Xóa">×</button>
+            <button className="chip-x" onClick={() => handleDelete(c.id, c.name)} title="Xóa">×</button>
           </span>
         ))}
       </div>
