@@ -1,5 +1,6 @@
 package com.example.financeapi.service;
 
+import com.example.financeapi.dto.request.TransactionFilter;
 import com.example.financeapi.dto.request.TransactionRequest;
 import com.example.financeapi.dto.response.TransactionResponse;
 import com.example.financeapi.entity.Category;
@@ -39,8 +40,10 @@ public class TransactionService {
      * Quy đổi (month, year) -> khoảng ngày [start, end) để lọc trên cột DATE.
      */
     @Transactional(readOnly = true)
-    public List<TransactionResponse> search(Integer month, Integer year, Long categoryId) {
+    public List<TransactionResponse> search(TransactionFilter filter) {
         User user = currentUserService.getCurrentUser();
+        Integer month = filter.month();
+        Integer year = filter.year();
 
         // Kiểm tra logic bộ lọc trước khi dựng khoảng ngày
         if (month != null && (month < 1 || month > 12)) {
@@ -48,6 +51,10 @@ public class TransactionService {
         }
         if (month != null && year == null) {
             throw new BadRequestException("Cần cung cấp 'year' khi lọc theo 'month'");
+        }
+        if (filter.minAmount() != null && filter.maxAmount() != null
+                && filter.minAmount().compareTo(filter.maxAmount()) > 0) {
+            throw new BadRequestException("minAmount không được lớn hơn maxAmount");
         }
 
         LocalDate start = null;
@@ -63,7 +70,7 @@ public class TransactionService {
         }
 
         // Dựng bộ điều kiện ĐỘNG: chỉ thêm điều kiện nào có giá trị.
-        Specification<Transaction> spec = buildFilter(user.getId(), categoryId, start, end);
+        Specification<Transaction> spec = buildFilter(user.getId(), filter, start, end);
         // Sắp xếp: mới nhất trước (theo ngày, rồi theo id).
         Sort sort = Sort.by(Sort.Order.desc("occurredAt"), Sort.Order.desc("id"));
 
@@ -80,19 +87,31 @@ public class TransactionService {
      * Ta gom các điều kiện vào danh sách rồi nối bằng AND. Điều kiện nào null thì bỏ qua
      * -> SQL sinh ra gọn, không dính bẫy "tham số không rõ kiểu".
      */
-    private Specification<Transaction> buildFilter(Long userId, Long categoryId,
+    private Specification<Transaction> buildFilter(Long userId, TransactionFilter filter,
                                                    LocalDate start, LocalDate end) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.equal(root.get("user").get("id"), userId));   // luôn lọc theo user
-            if (categoryId != null) {
-                predicates.add(cb.equal(root.get("category").get("id"), categoryId));
+            if (filter.categoryId() != null) {
+                predicates.add(cb.equal(root.get("category").get("id"), filter.categoryId()));
             }
             if (start != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("occurredAt"), start));
             }
             if (end != null) {
                 predicates.add(cb.lessThan(root.get("occurredAt"), end));
+            }
+            // Tìm theo từ khóa trong ghi chú (không phân biệt hoa/thường).
+            if (filter.keyword() != null && !filter.keyword().isBlank()) {
+                String like = "%" + filter.keyword().trim().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("note")), like));
+            }
+            // Lọc theo khoảng số tiền.
+            if (filter.minAmount() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("amount"), filter.minAmount()));
+            }
+            if (filter.maxAmount() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("amount"), filter.maxAmount()));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

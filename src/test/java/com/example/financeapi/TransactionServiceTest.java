@@ -1,5 +1,6 @@
 package com.example.financeapi;
 
+import com.example.financeapi.dto.request.TransactionFilter;
 import com.example.financeapi.dto.request.TransactionRequest;
 import com.example.financeapi.dto.response.TransactionResponse;
 import com.example.financeapi.entity.Category;
@@ -99,7 +100,8 @@ class TransactionServiceTest {
         loginAs(bob.getEmail());
 
         // Bob không thấy giao dịch nào
-        assertThat(transactionService.search(null, null, null)).isEmpty();
+        assertThat(transactionService.search(
+                new TransactionFilter(null, null, null, null, null, null))).isEmpty();
 
         // Bob không xóa được giao dịch của Alice -> 404
         assertThatThrownBy(() -> transactionService.delete(aliceTx.id()))

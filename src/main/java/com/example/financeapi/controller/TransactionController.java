@@ -1,5 +1,6 @@
 package com.example.financeapi.controller;
 
+import com.example.financeapi.dto.request.TransactionFilter;
 import com.example.financeapi.dto.request.TransactionRequest;
 import com.example.financeapi.dto.response.TransactionResponse;
 import com.example.financeapi.service.TransactionService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -39,8 +41,12 @@ public class TransactionController {
     public List<TransactionResponse> list(
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Long categoryId) {
-        return transactionService.search(month, year, categoryId);
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount) {
+        return transactionService.search(
+                new TransactionFilter(month, year, categoryId, keyword, minAmount, maxAmount));
     }
 
     @PostMapping
@@ -67,9 +73,13 @@ public class TransactionController {
     public ResponseEntity<byte[]> exportCsv(
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) Long categoryId) {
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) BigDecimal minAmount,
+            @RequestParam(required = false) BigDecimal maxAmount) {
 
-        List<TransactionResponse> list = transactionService.search(month, year, categoryId);
+        List<TransactionResponse> list = transactionService.search(
+                new TransactionFilter(month, year, categoryId, keyword, minAmount, maxAmount));
 
         StringBuilder sb = new StringBuilder();
         sb.append("Date,Category,Type,Amount,Note\n");
