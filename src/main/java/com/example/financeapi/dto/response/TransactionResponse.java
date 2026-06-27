@@ -17,7 +17,8 @@ public record TransactionResponse(
         LocalDate occurredAt,
         Long categoryId,
         String categoryName,
-        CategoryType categoryType
+        CategoryType categoryType,
+        String receiptUrl
 ) {
     public static TransactionResponse from(Transaction t) {
         Category c = t.getCategory();
@@ -28,7 +29,8 @@ public record TransactionResponse(
                 t.getOccurredAt(),
                 c.getId(),
                 c.getName(),
-                c.getType()
+                c.getType(),
+                t.getReceiptUrl()
         );
     }
 }

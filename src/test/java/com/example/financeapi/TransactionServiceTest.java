@@ -69,7 +69,7 @@ class TransactionServiceTest {
     void createValidTransaction_succeeds() {
         loginAs(alice.getEmail());
         TransactionRequest req = new TransactionRequest(
-                new BigDecimal("50000"), aliceCategory.getId(), "Pho", LocalDate.of(2026, 6, 1));
+                new BigDecimal("50000"), aliceCategory.getId(), "Pho", LocalDate.of(2026, 6, 1), null);
 
         TransactionResponse res = transactionService.create(req);
 
@@ -83,7 +83,7 @@ class TransactionServiceTest {
         // Alice cố gắn giao dịch vào danh mục của Bob -> bị từ chối (404).
         loginAs(alice.getEmail());
         TransactionRequest req = new TransactionRequest(
-                new BigDecimal("1000"), bobCategory.getId(), "muon", LocalDate.of(2026, 6, 1));
+                new BigDecimal("1000"), bobCategory.getId(), "muon", LocalDate.of(2026, 6, 1), null);
 
         assertThatThrownBy(() -> transactionService.create(req))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -94,7 +94,7 @@ class TransactionServiceTest {
         // Alice tạo 1 giao dịch
         loginAs(alice.getEmail());
         TransactionResponse aliceTx = transactionService.create(new TransactionRequest(
-                new BigDecimal("99000"), aliceCategory.getId(), "Alice", LocalDate.of(2026, 6, 1)));
+                new BigDecimal("99000"), aliceCategory.getId(), "Alice", LocalDate.of(2026, 6, 1), null));
 
         // Chuyển sang Bob
         loginAs(bob.getEmail());
@@ -109,7 +109,7 @@ class TransactionServiceTest {
 
         // Bob không sửa được giao dịch của Alice -> 404
         TransactionRequest upd = new TransactionRequest(
-                new BigDecimal("1"), bobCategory.getId(), "hack", LocalDate.of(2026, 6, 1));
+                new BigDecimal("1"), bobCategory.getId(), "hack", LocalDate.of(2026, 6, 1), null);
         assertThatThrownBy(() -> transactionService.update(aliceTx.id(), upd))
                 .isInstanceOf(ResourceNotFoundException.class);
     }

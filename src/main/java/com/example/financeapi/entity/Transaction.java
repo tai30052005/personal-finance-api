@@ -49,6 +49,10 @@ public class Transaction {
     @Column(name = "occurred_at", nullable = false)
     private LocalDate occurredAt;
 
+    /** URL ảnh hóa đơn (do Cloudinary trả về). Tùy chọn. */
+    @Column(name = "receipt_url", length = 500)
+    private String receiptUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -106,6 +110,14 @@ public class Transaction {
 
     public void setOccurredAt(LocalDate occurredAt) {
         this.occurredAt = occurredAt;
+    }
+
+    public String getReceiptUrl() {
+        return receiptUrl;
+    }
+
+    public void setReceiptUrl(String receiptUrl) {
+        this.receiptUrl = receiptUrl;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -124,6 +124,7 @@ public class TransactionService {
 
         Transaction transaction = new Transaction(
                 user, category, request.amount(), request.note(), request.occurredAt());
+        transaction.setReceiptUrl(request.receiptUrl());
         transactionRepository.save(transaction);
         return TransactionResponse.from(transaction);
     }
@@ -139,6 +140,7 @@ public class TransactionService {
         transaction.setCategory(category);
         transaction.setNote(request.note());
         transaction.setOccurredAt(request.occurredAt());
+        transaction.setReceiptUrl(request.receiptUrl());
         return TransactionResponse.from(transaction);
     }
 

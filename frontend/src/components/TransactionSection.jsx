@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions } from "../api/finance";
 import { formatVND } from "../utils/format";
 import Modal from "./Modal";
+import ReceiptUpload from "./ReceiptUpload";
 
 // Danh sách giao dịch theo tháng + thêm + sửa + xóa.
 export default function TransactionSection({ month, year, categories, reloadToken, onChanged }) {
@@ -10,6 +11,7 @@ export default function TransactionSection({ month, year, categories, reloadToke
   const [categoryId, setCategoryId] = useState("");
   const [note, setNote] = useState("");
   const [occurredAt, setOccurredAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [receiptUrl, setReceiptUrl] = useState("");
   const [error, setError] = useState("");
   // Giao dịch đang được sửa (null = không mở modal).
   const [editing, setEditing] = useState(null);
@@ -48,9 +50,11 @@ export default function TransactionSection({ month, year, categories, reloadToke
         categoryId: Number(categoryId),
         note,
         occurredAt,
+        receiptUrl: receiptUrl || null,
       });
       setAmount("");
       setNote("");
+      setReceiptUrl("");
       onChanged();
     } catch (err) {
       const data = err.response?.data;
@@ -108,6 +112,7 @@ export default function TransactionSection({ month, year, categories, reloadToke
         </select>
         <input type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
         <input type="text" placeholder="Ghi chú" value={note} onChange={(e) => setNote(e.target.value)} />
+        <ReceiptUpload value={receiptUrl} onChange={setReceiptUrl} />
         <button className="btn primary auto" type="submit">Thêm</button>
       </form>
       {error && <div className="alert error">{error}</div>}
@@ -138,7 +143,14 @@ export default function TransactionSection({ month, year, categories, reloadToke
               <tr key={t.id}>
                 <td>{t.occurredAt}</td>
                 <td>{t.categoryName}</td>
-                <td className="muted">{t.note}</td>
+                <td className="muted">
+                  {t.note}
+                  {t.receiptUrl && (
+                    <a href={t.receiptUrl} target="_blank" rel="noreferrer" title="Xem hóa đơn">
+                      <img src={t.receiptUrl} alt="Hóa đơn" className="receipt-thumb" />
+                    </a>
+                  )}
+                </td>
                 <td className={"right " + (t.categoryType === "INCOME" ? "pos" : "neg")}>
                   {formatVND(t.amount)}
                 </td>
@@ -170,6 +182,7 @@ function EditTransactionModal({ tx, categories, onClose, onSaved }) {
   const [categoryId, setCategoryId] = useState(String(tx.categoryId));
   const [occurredAt, setOccurredAt] = useState(tx.occurredAt);
   const [note, setNote] = useState(tx.note || "");
+  const [receiptUrl, setReceiptUrl] = useState(tx.receiptUrl || "");
   const [error, setError] = useState("");
 
   async function handleSave(e) {
@@ -181,6 +194,7 @@ function EditTransactionModal({ tx, categories, onClose, onSaved }) {
         categoryId: Number(categoryId),
         note,
         occurredAt,
+        receiptUrl: receiptUrl || null,
       });
       onSaved();
     } catch (err) {
@@ -209,6 +223,9 @@ function EditTransactionModal({ tx, categories, onClose, onSaved }) {
         </label>
         <label>Ghi chú
           <input type="text" value={note} onChange={(e) => setNote(e.target.value)} />
+        </label>
+        <label>Ảnh hóa đơn
+          <ReceiptUpload value={receiptUrl} onChange={setReceiptUrl} />
         </label>
         {error && <div className="alert error">{error}</div>}
         <div className="modal-actions">

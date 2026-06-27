@@ -29,6 +29,9 @@ public record TransactionRequest(
 
         @NotNull(message = "Ngày giao dịch là bắt buộc")
         @JsonFormat(pattern = "yyyy-MM-dd")
-        LocalDate occurredAt
+        LocalDate occurredAt,
+
+        @Size(max = 500, message = "Đường dẫn ảnh tối đa 500 ký tự")
+        String receiptUrl
 ) {
 }
