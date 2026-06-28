@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions } from "../api/finance";
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions, parseTransaction, isParseEnabled } from "../api/finance";
 import { formatVND } from "../utils/format";
 import Modal from "./Modal";
 import ReceiptUpload from "./ReceiptUpload";
@@ -15,6 +15,16 @@ export default function TransactionSection({ month, year, categories, reloadToke
   const [error, setError] = useState("");
   // Giao dịch đang được sửa (null = không mở modal).
   const [editing, setEditing] = useState(null);
+
+  // AI: nhập nhanh bằng ngôn ngữ tự nhiên.
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [quickText, setQuickText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [aiHint, setAiHint] = useState("");
+
+  useEffect(() => {
+    isParseEnabled().then(setAiEnabled).catch(() => setAiEnabled(false));
+  }, []);
 
   // Bộ lọc đã áp dụng (rỗng = không lọc). Ô nhập riêng, chỉ áp dụng khi bấm "Lọc".
   const [filters, setFilters] = useState({ keyword: "", minAmount: "", maxAmount: "" });
@@ -68,6 +78,34 @@ export default function TransactionSection({ month, year, categories, reloadToke
     onChanged();
   }
 
+  // Gửi câu chữ cho Claude phân tích rồi điền sẵn các ô của form thêm.
+  async function handleQuickParse(e) {
+    e.preventDefault();
+    if (!quickText.trim()) return;
+    setError("");
+    setAiHint("");
+    setParsing(true);
+    try {
+      const p = await parseTransaction(quickText.trim());
+      if (p.amount != null) setAmount(String(p.amount));
+      if (p.occurredAt) setOccurredAt(p.occurredAt);
+      if (p.note != null) setNote(p.note);
+      if (p.categoryId != null) {
+        setCategoryId(String(p.categoryId));
+      } else if (p.categoryName) {
+        // Claude gợi ý danh mục chưa có — để user tự chọn/tạo.
+        setCategoryId("");
+        setAiHint(`Gợi ý danh mục: "${p.categoryName}" (${p.type === "INCOME" ? "Thu" : "Chi"}) — hãy chọn hoặc tạo danh mục này.`);
+      }
+      setQuickText("");
+    } catch (err) {
+      const data = err.response?.data;
+      setError(data?.message || "Không phân tích được, hãy thử lại hoặc nhập tay.");
+    } finally {
+      setParsing(false);
+    }
+  }
+
   // Áp dụng bộ lọc đang gõ (kích hoạt tải lại qua useEffect).
   function handleFilter(e) {
     e.preventDefault();
@@ -100,6 +138,17 @@ export default function TransactionSection({ month, year, categories, reloadToke
           <button className="btn auto sm" onClick={handleExport} title="Tải file CSV">⤓ Export CSV</button>
         )}
       </div>
+
+      {aiEnabled && (
+        <form className="inline-form quick-form" onSubmit={handleQuickParse}>
+          <input type="text" className="quick-input" placeholder='⚡ Nhập nhanh, vd: "cà phê 35k hôm qua"'
+                 value={quickText} onChange={(e) => setQuickText(e.target.value)} />
+          <button className="btn auto" type="submit" disabled={parsing}>
+            {parsing ? "Đang phân tích..." : "Phân tích"}
+          </button>
+        </form>
+      )}
+      {aiHint && <div className="alert hint">{aiHint}</div>}
 
       <form className="inline-form" onSubmit={handleAdd}>
         <input type="number" step="0.01" min="0.01" placeholder="Số tiền" value={amount}

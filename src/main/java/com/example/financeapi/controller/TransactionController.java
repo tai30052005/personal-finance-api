@@ -1,8 +1,11 @@
 package com.example.financeapi.controller;
 
+import com.example.financeapi.dto.request.ParseRequest;
 import com.example.financeapi.dto.request.TransactionFilter;
 import com.example.financeapi.dto.request.TransactionRequest;
+import com.example.financeapi.dto.response.ParsedTransactionResponse;
 import com.example.financeapi.dto.response.TransactionResponse;
+import com.example.financeapi.service.NaturalLanguageService;
 import com.example.financeapi.service.TransactionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -28,9 +31,12 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final NaturalLanguageService naturalLanguageService;
 
-    public TransactionController(TransactionService transactionService) {
+    public TransactionController(TransactionService transactionService,
+                                 NaturalLanguageService naturalLanguageService) {
         this.transactionService = transactionService;
+        this.naturalLanguageService = naturalLanguageService;
     }
 
     /**
@@ -52,6 +58,21 @@ public class TransactionController {
     @PostMapping
     public ResponseEntity<TransactionResponse> create(@Valid @RequestBody TransactionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.create(request));
+    }
+
+    /**
+     * POST /api/transactions/parse — phân tích câu nhập tự nhiên ("cà phê 35k hôm qua")
+     * thành dữ liệu có cấu trúc để frontend ĐIỀN SẴN form. KHÔNG tự lưu giao dịch.
+     */
+    @PostMapping("/parse")
+    public ParsedTransactionResponse parse(@Valid @RequestBody ParseRequest request) {
+        return naturalLanguageService.parse(request.text());
+    }
+
+    /** GET /api/transactions/parse-enabled — frontend dùng để ẩn/hiện ô nhập nhanh. */
+    @GetMapping("/parse-enabled")
+    public java.util.Map<String, Boolean> parseEnabled() {
+        return java.util.Map.of("enabled", naturalLanguageService.isEnabled());
     }
 
     @PutMapping("/{id}")

@@ -40,6 +40,9 @@ services:
       DB_USER: finance
       DB_PASSWORD: finance
       JWT_SECRET: change-me-to-a-long-random-secret-key-at-least-32-bytes
+      # Key cho tính năng nhập bằng ngôn ngữ tự nhiên (Google Gemini). Lấy từ biến
+      # môi trường của máy host; để trống thì tính năng tự tắt. KHÔNG hardcode ở đây.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "8080:8080"          # truy cập app tại http://localhost:8080
 

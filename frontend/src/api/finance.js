@@ -17,6 +17,11 @@ export const createTransaction = (body) =>
   client.post("/api/transactions", body).then((r) => r.data);
 export const updateTransaction = (id, body) =>
   client.put(`/api/transactions/${id}`, body).then((r) => r.data);
+// AI: phân tích câu nhập tự nhiên -> dữ liệu điền sẵn form (không tự lưu).
+export const parseTransaction = (text) =>
+  client.post("/api/transactions/parse", { text }).then((r) => r.data);
+export const isParseEnabled = () =>
+  client.get("/api/transactions/parse-enabled").then((r) => r.data.enabled);
 export const deleteTransaction = (id) =>
   client.delete(`/api/transactions/${id}`);
 // Tải file CSV (responseType blob để nhận dữ liệu nhị phân của file).

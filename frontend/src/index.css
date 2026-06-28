@@ -84,6 +84,11 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: var
 /* ===== Alerts ===== */
 .alert { padding: 10px 12px; border-radius: 8px; font-size: 14px; margin-bottom: 4px; }
 .alert.error { background: var(--danger-bg); color: var(--danger); }
+.alert.hint { background: #eff6ff; color: var(--primary); }
+
+/* ===== Quick (AI) input ===== */
+.quick-form { margin-bottom: 10px; }
+.quick-input { flex: 1; min-width: 220px; }
 
 /* ===== App layout ===== */
 .topbar {
