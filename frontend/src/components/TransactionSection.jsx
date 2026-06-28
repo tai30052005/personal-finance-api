@@ -21,6 +21,8 @@ export default function TransactionSection({ month, year, categories, reloadToke
   const [quickText, setQuickText] = useState("");
   const [parsing, setParsing] = useState(false);
   const [aiHint, setAiHint] = useState("");
+  // Khi AI tách >1 giao dịch: danh sách chờ duyệt rồi "Thêm tất cả".
+  const [batch, setBatch] = useState(null);
 
   useEffect(() => {
     isParseEnabled().then(setAiEnabled).catch(() => setAiEnabled(false));
@@ -86,7 +88,14 @@ export default function TransactionSection({ month, year, categories, reloadToke
     setAiHint("");
     setParsing(true);
     try {
-      const p = await parseTransaction(quickText.trim());
+      const results = await parseTransaction(quickText.trim());
+      // Nhiều giao dịch -> mở bảng "Thêm tất cả"; 1 giao dịch -> điền sẵn form như cũ.
+      if (results.length > 1) {
+        setBatch(results);
+        setQuickText("");
+        return;
+      }
+      const p = results[0];
       if (p.amount != null) setAmount(String(p.amount));
       if (p.occurredAt) setOccurredAt(p.occurredAt);
       if (p.note != null) setNote(p.note);
@@ -151,6 +160,15 @@ export default function TransactionSection({ month, year, categories, reloadToke
         </form>
       )}
       {aiHint && <div className="alert hint">{aiHint}</div>}
+
+      {batch && (
+        <BatchPreview
+          items={batch}
+          categories={categories}
+          onCancel={() => setBatch(null)}
+          onDone={() => { setBatch(null); onChanged(); }}
+        />
+      )}
 
       <form className="inline-form" onSubmit={handleAdd}>
         <input type="number" step="0.01" min="0.01" placeholder="Số tiền" value={amount}
@@ -285,5 +303,82 @@ function EditTransactionModal({ tx, categories, onClose, onSaved }) {
         </div>
       </form>
     </Modal>
+  );
+}
+
+// Bảng xem trước khi AI tách ra NHIỀU giao dịch: sửa nhanh rồi "Thêm tất cả".
+function BatchPreview({ items, categories, onCancel, onDone }) {
+  const today = () => new Date().toISOString().slice(0, 10);
+  const [rows, setRows] = useState(() =>
+    items.map((p) => ({
+      amount: p.amount != null ? String(p.amount) : "",
+      categoryId: p.categoryId != null ? String(p.categoryId) : "",
+      occurredAt: p.occurredAt || today(),
+      note: p.note || "",
+      suggested: p.categoryId == null ? p.categoryName : null,
+    }))
+  );
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const update = (i, field, val) =>
+    setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, [field]: val } : r)));
+  const removeRow = (i) => setRows((rs) => rs.filter((_, idx) => idx !== i));
+
+  async function addAll() {
+    const valid = rows.filter((r) => Number(r.amount) > 0 && r.categoryId);
+    if (valid.length === 0) {
+      setError("Chưa dòng nào đủ số tiền và danh mục.");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      for (const r of valid) {
+        await createTransaction({
+          amount: Number(r.amount),
+          categoryId: Number(r.categoryId),
+          note: r.note,
+          occurredAt: r.occurredAt,
+        });
+      }
+      onDone();
+    } catch {
+      setError("Có lỗi khi thêm, hãy thử lại.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="batch-preview">
+      <div className="section-head">
+        <strong>⚡ AI tách được {rows.length} giao dịch — kiểm tra rồi thêm</strong>
+        <button className="btn ghost auto sm" onClick={onCancel}>Hủy</button>
+      </div>
+      {rows.map((r, i) => (
+        <div className="batch-row" key={i}>
+          <input type="number" step="0.01" min="0.01" placeholder="Số tiền" value={r.amount}
+                 onChange={(e) => update(i, "amount", e.target.value)} />
+          <select value={r.categoryId} onChange={(e) => update(i, "categoryId", e.target.value)}>
+            <option value="">{r.suggested ? `-- ${r.suggested}? --` : "-- Danh mục --"}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name} ({c.type === "INCOME" ? "Thu" : "Chi"})</option>
+            ))}
+          </select>
+          <input type="date" value={r.occurredAt} onChange={(e) => update(i, "occurredAt", e.target.value)} />
+          <input type="text" placeholder="Ghi chú" value={r.note} onChange={(e) => update(i, "note", e.target.value)} />
+          <button className="btn danger sm auto" onClick={() => removeRow(i)} title="Bỏ dòng">✕</button>
+        </div>
+      ))}
+      {error && <div className="alert error">{error}</div>}
+      <div className="modal-actions">
+        <button className="btn primary auto" onClick={addAll} disabled={saving}>
+          {saving ? "Đang thêm..." : `Thêm tất cả (${rows.length})`}
+        </button>
+      </div>
+    </div>
   );
 }

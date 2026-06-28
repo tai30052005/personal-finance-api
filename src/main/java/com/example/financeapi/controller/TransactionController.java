@@ -65,7 +65,7 @@ public class TransactionController {
      * thành dữ liệu có cấu trúc để frontend ĐIỀN SẴN form. KHÔNG tự lưu giao dịch.
      */
     @PostMapping("/parse")
-    public ParsedTransactionResponse parse(@Valid @RequestBody ParseRequest request) {
+    public List<ParsedTransactionResponse> parse(@Valid @RequestBody ParseRequest request) {
         return naturalLanguageService.parse(request.text());
     }
 

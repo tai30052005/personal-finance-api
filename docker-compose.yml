@@ -43,6 +43,8 @@ services:
       # Key cho tính năng nhập bằng ngôn ngữ tự nhiên (Google Gemini). Lấy từ biến
       # môi trường của máy host; để trống thì tính năng tự tắt. KHÔNG hardcode ở đây.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Cho phép đổi model qua env mà không sửa code (mặc định gemini-2.5-flash-lite).
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash-lite}
     ports:
       - "8080:8080"          # truy cập app tại http://localhost:8080
 

@@ -19,6 +19,7 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +63,8 @@ public class NaturalLanguageService {
         return enabled;
     }
 
-    public ParsedTransactionResponse parse(String text) {
+    /** Một câu có thể chứa NHIỀU giao dịch -> trả về danh sách (luôn ≥ 1 phần tử). */
+    public List<ParsedTransactionResponse> parse(String text) {
         if (!enabled) {
             throw new BadRequestException("Tính năng AI chưa được cấu hình (thiếu GEMINI_API_KEY).");
         }
@@ -77,13 +79,13 @@ public class NaturalLanguageService {
                         // Tắt "thinking" của gemini-2.5-flash: việc trích xuất đơn giản không cần
                         // suy luận, mà thinking gây chậm (8s+), tốn token, lỗi chập chờn trên free tier.
                         "thinkingConfig", Map.of("thinkingBudget", 0),
-                        "maxOutputTokens", 512,
+                        "maxOutputTokens", 1024,   // đủ chỗ cho nhiều giao dịch
                         "responseMimeType", "application/json",
                         "responseSchema", responseSchema()
                 )
         );
 
-        ExtractedTransaction extracted;
+        ExtractedTransaction[] extracted;
         try {
             JsonNode response = postWithRetry(body);
 
@@ -92,7 +94,7 @@ public class NaturalLanguageService {
             if (json == null || json.isBlank()) {
                 throw new BadRequestException("AI không hiểu được nội dung, hãy thử lại.");
             }
-            extracted = objectMapper.readValue(json, ExtractedTransaction.class);
+            extracted = objectMapper.readValue(json, ExtractedTransaction[].class);
         } catch (BadRequestException e) {
             throw e;
         } catch (HttpClientErrorException e) {
@@ -109,7 +111,14 @@ public class NaturalLanguageService {
             throw new BadRequestException("Không phân tích được lúc này, hãy thử lại hoặc nhập tay.");
         }
 
-        return resolve(extracted, categories);
+        if (extracted.length == 0) {
+            throw new BadRequestException("AI không tách được giao dịch nào, hãy thử lại.");
+        }
+        List<ParsedTransactionResponse> result = new ArrayList<>();
+        for (ExtractedTransaction ex : extracted) {
+            result.add(resolve(ex, categories));
+        }
+        return result;
     }
 
     /** Gọi Gemini; nếu gặp lỗi 5xx (vd 503 quá tải) thì thử lại 1 lần trước khi bỏ cuộc. */
@@ -162,9 +171,9 @@ public class NaturalLanguageService {
         return new ParsedTransactionResponse(amount, categoryId, categoryName, type, occurredAt, ex.note());
     }
 
-    /** JSON schema (kiểu OpenAPI của Gemini) ép kết quả trả về đúng cấu trúc. */
+    /** JSON schema (kiểu OpenAPI của Gemini): MẢNG các giao dịch (mỗi câu có thể nhiều khoản). */
     private Map<String, Object> responseSchema() {
-        return Map.of(
+        Map<String, Object> item = Map.of(
                 "type", "OBJECT",
                 "properties", Map.of(
                         "amount", Map.of("type", "INTEGER",
@@ -179,6 +188,7 @@ public class NaturalLanguageService {
                 "required", List.of("amount", "categoryName", "type", "occurredAt", "note"),
                 "propertyOrdering", List.of("amount", "categoryName", "type", "occurredAt", "note")
         );
+        return Map.of("type", "ARRAY", "items", item);
     }
 
     private String buildSystemPrompt(List<Category> categories) {
@@ -197,6 +207,7 @@ public class NaturalLanguageService {
                 Hôm nay là %s (%s). Suy ra ngày dựa trên mốc này (vd: "hôm qua", "thứ 6 tuần trước").
                 Tiền tệ là VND. Quy đổi: 'k'/'nghìn' = ×1000; 'tr'/'triệu'/'củ' = ×1000000.
                 Nếu câu KHÔNG nêu số tiền cụ thể, đặt amount = 0; TUYỆT ĐỐI không bịa số.
+                Một câu có thể chứa NHIỀU giao dịch (vd "cà phê 35k và taxi 80k") — tách thành nhiều phần tử trong mảng, mỗi khoản một phần tử. Nếu chỉ 1 khoản thì mảng có 1 phần tử.
                 Danh mục hiện có của người dùng — hãy CHỌN ĐÚNG MỘT tên dưới đây nếu phù hợp:
                 %s
                 Nếu không có danh mục phù hợp, đề xuất một tên danh mục ngắn gọn, hợp lý.
