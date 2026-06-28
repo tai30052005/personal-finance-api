@@ -51,8 +51,17 @@ User → Vercel (React) ──HTTPS──► Render (Spring Boot API) ──► 
    | `SPRING_DATASOURCE_PASSWORD` | Neon password |
    | `JWT_SECRET` | a long random string (≥ 32 chars) |
    | `CORS_ALLOWED_ORIGINS` | `https://*.vercel.app` (or your exact Vercel URL) |
+   | `GEMINI_API_KEY` | Google Gemini API key — enables natural-language entry |
 
    *(`PORT` is provided by Render automatically; the app already binds to it.)*
+
+   > **Natural-language entry (AI):** `GEMINI_API_KEY` is what keeps the "⚡ Nhập nhanh"
+   > box working. Render persists env vars across deploys/restarts, so set it **once** here
+   > and the feature stays on — it only turns off if the variable is missing or empty.
+   > Get a free key at https://aistudio.google.com/apikey (no credit card). The default
+   > model is `gemini-2.5-flash`; override with `GEMINI_MODEL` if needed (do **not** use
+   > `gemini-2.0-flash` — its free tier is unavailable). If you ever rotate the key, update
+   > this variable too. Leave it unset and the app still runs — the AI box just hides.
 5. Create the service and wait for the build. Note the URL, e.g.
    `https://personal-finance-api-xxxx.onrender.com`.
 6. Verify: open `https://<backend>/api/health` → `{"status":"UP"}`. Flyway creates the
