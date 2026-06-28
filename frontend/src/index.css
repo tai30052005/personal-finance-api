@@ -98,6 +98,41 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: var
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 .container { max-width: 1000px; margin: 0 auto; padding: 24px 16px; display: grid; gap: 20px; }
 
+/* ===== Dashboard layout: sidebar trái + nội dung ===== */
+.dash-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.dash-main { min-width: 0; }   /* cho phép nội dung co lại, tránh tràn ngang */
+
+.sidebar {
+  position: sticky; top: 0; height: 100vh;
+  background: var(--card); border-right: 1px solid var(--border);
+  padding: 18px 14px; display: flex; flex-direction: column; gap: 18px;
+}
+.sidebar-brand { font-size: 20px; font-weight: 700; padding: 6px 10px; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none;
+}
+.nav-link:hover { background: var(--bg); text-decoration: none; }
+.nav-link.active { background: #eef2ff; color: var(--primary); }
+.nav-icon { font-size: 16px; }
+
+.nav-toggle { display: none; }      /* nút ☰ chỉ hiện trên màn hình nhỏ */
+.nav-backdrop { display: none; }
+
+/* Mobile: sidebar trượt ra từ trái, có lớp phủ */
+@media (max-width: 760px) {
+  .dash-layout { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; z-index: 60; width: 240px;
+    transform: translateX(-100%); transition: transform 0.2s ease;
+  }
+  .dash-layout.nav-open .sidebar { transform: translateX(0); }
+  .nav-toggle { display: inline-flex; }
+  .nav-backdrop { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, 0.4); }
+}
+
 /* ===== Table ===== */
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
