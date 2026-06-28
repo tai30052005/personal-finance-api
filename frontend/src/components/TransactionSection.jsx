@@ -90,13 +90,15 @@ export default function TransactionSection({ month, year, categories, reloadToke
       if (p.amount != null) setAmount(String(p.amount));
       if (p.occurredAt) setOccurredAt(p.occurredAt);
       if (p.note != null) setNote(p.note);
-      if (p.categoryId != null) {
-        setCategoryId(String(p.categoryId));
-      } else if (p.categoryName) {
-        // Claude gợi ý danh mục chưa có — để user tự chọn/tạo.
-        setCategoryId("");
-        setAiHint(`Gợi ý danh mục: "${p.categoryName}" (${p.type === "INCOME" ? "Thu" : "Chi"}) — hãy chọn hoặc tạo danh mục này.`);
+      setCategoryId(p.categoryId != null ? String(p.categoryId) : "");
+
+      // Gom các điểm cần người dùng bổ sung (thiếu tiền / danh mục chưa có).
+      const hints = [];
+      if (p.amount == null) hints.push("chưa nhận ra số tiền — hãy nhập số tiền");
+      if (p.categoryId == null && p.categoryName) {
+        hints.push(`gợi ý danh mục "${p.categoryName}" (${p.type === "INCOME" ? "Thu" : "Chi"}) — hãy chọn hoặc tạo`);
       }
+      setAiHint(hints.length ? "⚠️ " + hints.join("; ") + "." : "");
       setQuickText("");
     } catch (err) {
       const data = err.response?.data;

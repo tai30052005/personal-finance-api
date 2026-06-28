@@ -48,7 +48,9 @@ app:
   # Lấy key miễn phí ở https://aistudio.google.com — KHÔNG commit key vào repo.
   ai:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.5-flash}
+    # flash-lite: nhanh/rẻ, đủ cho trích xuất, và quota free cao hơn gemini-2.5-flash
+    # (model đó chỉ 20 request/ngày trên tài khoản này). KHÔNG dùng gemini-2.0-flash (limit 0).
+    model: ${GEMINI_MODEL:gemini-2.5-flash-lite}
 
 # ===== Swagger / OpenAPI =====
 springdoc:

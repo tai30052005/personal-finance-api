@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
@@ -72,6 +74,10 @@ public class NaturalLanguageService {
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", text)))),
                 "generationConfig", Map.of(
                         "temperature", 0,
+                        // Tắt "thinking" của gemini-2.5-flash: việc trích xuất đơn giản không cần
+                        // suy luận, mà thinking gây chậm (8s+), tốn token, lỗi chập chờn trên free tier.
+                        "thinkingConfig", Map.of("thinkingBudget", 0),
+                        "maxOutputTokens", 512,
                         "responseMimeType", "application/json",
                         "responseSchema", responseSchema()
                 )
@@ -79,13 +85,7 @@ public class NaturalLanguageService {
 
         ExtractedTransaction extracted;
         try {
-            JsonNode response = restClient.post()
-                    .uri("/models/{model}:generateContent", model)
-                    .header("x-goog-api-key", apiKey)
-                    .header("Content-Type", "application/json")
-                    .body(body)
-                    .retrieve()
-                    .body(JsonNode.class);
+            JsonNode response = postWithRetry(body);
 
             String json = response.path("candidates").path(0)
                     .path("content").path("parts").path(0).path("text").asText(null);
@@ -95,12 +95,40 @@ public class NaturalLanguageService {
             extracted = objectMapper.readValue(json, ExtractedTransaction.class);
         } catch (BadRequestException e) {
             throw e;
+        } catch (HttpClientErrorException e) {
+            log.warn("Gemini lỗi {}: {}", e.getStatusCode(), e.getMessage());
+            if (e.getStatusCode().value() == 429) {
+                throw new BadRequestException("Đã hết lượt phân tích AI miễn phí hôm nay — hãy nhập tay hoặc thử lại sau.");
+            }
+            throw new BadRequestException("Không phân tích được lúc này, hãy thử lại hoặc nhập tay.");
+        } catch (HttpServerErrorException e) {
+            log.warn("Gemini quá tải {}: {}", e.getStatusCode(), e.getMessage());
+            throw new BadRequestException("Dịch vụ AI đang quá tải, hãy thử lại sau giây lát hoặc nhập tay.");
         } catch (Exception e) {
             log.warn("Gọi Gemini thất bại: {}", e.getMessage());
             throw new BadRequestException("Không phân tích được lúc này, hãy thử lại hoặc nhập tay.");
         }
 
         return resolve(extracted, categories);
+    }
+
+    /** Gọi Gemini; nếu gặp lỗi 5xx (vd 503 quá tải) thì thử lại 1 lần trước khi bỏ cuộc. */
+    private JsonNode postWithRetry(Map<String, Object> body) {
+        HttpServerErrorException last = null;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            try {
+                return restClient.post()
+                        .uri("/models/{model}:generateContent", model)
+                        .header("x-goog-api-key", apiKey)
+                        .header("Content-Type", "application/json")
+                        .body(body)
+                        .retrieve()
+                        .body(JsonNode.class);
+            } catch (HttpServerErrorException e) {
+                last = e;   // 5xx tạm thời — thử lại
+            }
+        }
+        throw last;
     }
 
     /** Map kết quả thô về danh mục của user + chuẩn hóa ngày/số tiền. */
@@ -119,7 +147,11 @@ public class NaturalLanguageService {
 
         LocalDate occurredAt;
         try {
-            occurredAt = LocalDate.parse(ex.occurredAt());
+            String d = ex.occurredAt();
+            if (d != null && d.length() >= 10) {
+                d = d.substring(0, 10);   // cắt phần giờ nếu model trả về dạng datetime
+            }
+            occurredAt = LocalDate.parse(d);
         } catch (RuntimeException e) {
             occurredAt = LocalDate.now();   // đường lùi nếu ngày sai định dạng
         }
@@ -164,6 +196,7 @@ public class NaturalLanguageService {
                 Bạn là trợ lý trích xuất giao dịch tài chính từ câu nhập tiếng Việt tự nhiên.
                 Hôm nay là %s (%s). Suy ra ngày dựa trên mốc này (vd: "hôm qua", "thứ 6 tuần trước").
                 Tiền tệ là VND. Quy đổi: 'k'/'nghìn' = ×1000; 'tr'/'triệu'/'củ' = ×1000000.
+                Nếu câu KHÔNG nêu số tiền cụ thể, đặt amount = 0; TUYỆT ĐỐI không bịa số.
                 Danh mục hiện có của người dùng — hãy CHỌN ĐÚNG MỘT tên dưới đây nếu phù hợp:
                 %s
                 Nếu không có danh mục phù hợp, đề xuất một tên danh mục ngắn gọn, hợp lý.
