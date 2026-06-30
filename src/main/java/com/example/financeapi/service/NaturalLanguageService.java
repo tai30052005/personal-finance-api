@@ -6,11 +6,13 @@ import com.example.financeapi.entity.Category;
 import com.example.financeapi.entity.User;
 import com.example.financeapi.exception.BadRequestException;
 import com.example.financeapi.repository.CategoryRepository;
+import com.example.financeapi.repository.TransactionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -20,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +40,7 @@ public class NaturalLanguageService {
     private static final String GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
     private final CurrentUserService currentUserService;
     private final ObjectMapper objectMapper;
     private final RestClient restClient;
@@ -45,11 +49,13 @@ public class NaturalLanguageService {
     private final boolean enabled;
 
     public NaturalLanguageService(CategoryRepository categoryRepository,
+                                  TransactionRepository transactionRepository,
                                   CurrentUserService currentUserService,
                                   ObjectMapper objectMapper,
                                   @Value("${app.ai.api-key:}") String apiKey,
-                                  @Value("${app.ai.model:gemini-2.0-flash}") String model) {
+                                  @Value("${app.ai.model:gemini-2.5-flash-lite}") String model) {
         this.categoryRepository = categoryRepository;
+        this.transactionRepository = transactionRepository;
         this.currentUserService = currentUserService;
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
@@ -70,9 +76,10 @@ public class NaturalLanguageService {
         }
         User user = currentUserService.getCurrentUser();
         List<Category> categories = categoryRepository.findByUserIdOrderByIdAsc(user.getId());
+        String examples = buildExamples(user.getId());
 
         Map<String, Object> body = Map.of(
-                "system_instruction", Map.of("parts", List.of(Map.of("text", buildSystemPrompt(categories)))),
+                "system_instruction", Map.of("parts", List.of(Map.of("text", buildSystemPrompt(categories, examples)))),
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", text)))),
                 "generationConfig", Map.of(
                         "temperature", 0,
@@ -191,7 +198,7 @@ public class NaturalLanguageService {
         return Map.of("type", "ARRAY", "items", item);
     }
 
-    private String buildSystemPrompt(List<Category> categories) {
+    private String buildSystemPrompt(List<Category> categories, String examples) {
         LocalDate today = LocalDate.now();
         StringBuilder cats = new StringBuilder();
         if (categories.isEmpty()) {
@@ -202,6 +209,10 @@ public class NaturalLanguageService {
             }
         }
 
+        String examplesBlock = examples.isBlank() ? ""
+                : "Ví dụ phân loại GẦN ĐÂY của chính người dùng (ưu tiên map theo thói quen này):\n"
+                  + examples + "\n";
+
         return """
                 Bạn là trợ lý trích xuất giao dịch tài chính từ câu nhập tiếng Việt tự nhiên.
                 Hôm nay là %s (%s). Suy ra ngày dựa trên mốc này (vd: "hôm qua", "thứ 6 tuần trước").
@@ -210,9 +221,24 @@ public class NaturalLanguageService {
                 Một câu có thể chứa NHIỀU giao dịch (vd "cà phê 35k và taxi 80k") — tách thành nhiều phần tử trong mảng, mỗi khoản một phần tử. Nếu chỉ 1 khoản thì mảng có 1 phần tử.
                 Danh mục hiện có của người dùng — hãy CHỌN ĐÚNG MỘT tên dưới đây nếu phù hợp:
                 %s
-                Nếu không có danh mục phù hợp, đề xuất một tên danh mục ngắn gọn, hợp lý.
+                %sNếu không có danh mục phù hợp, đề xuất một tên danh mục ngắn gọn, hợp lý.
                 Chỉ trích xuất dữ liệu, không giải thích.
-                """.formatted(today, weekdayVi(today.getDayOfWeek()), cats.toString().trim());
+                """.formatted(today, weekdayVi(today.getDayOfWeek()), cats.toString().trim(), examplesBlock);
+    }
+
+    /** Vài cặp "ghi chú -> danh mục" gần đây (mỗi ghi chú lấy lần mới nhất, tối đa 25). */
+    private String buildExamples(Long userId) {
+        var recent = transactionRepository.recentNoteCategories(userId, PageRequest.of(0, 60));
+        LinkedHashMap<String, String> byNote = new LinkedHashMap<>();
+        for (var nc : recent) {
+            String note = nc.getNote() == null ? "" : nc.getNote().trim();
+            if (note.isEmpty()) continue;
+            String key = note.toLowerCase();
+            if (byNote.containsKey(key)) continue;   // giữ bản mới nhất cho mỗi ghi chú
+            byNote.put(key, "- \"" + note + "\" -> " + nc.getCategory());
+            if (byNote.size() >= 25) break;
+        }
+        return String.join("\n", byNote.values());
     }
 
     private String weekdayVi(DayOfWeek d) {

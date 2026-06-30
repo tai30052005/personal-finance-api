@@ -2,6 +2,7 @@ package com.example.financeapi.repository;
 
 import com.example.financeapi.dto.response.CategoryBreakdown;
 import com.example.financeapi.entity.Transaction;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -72,4 +73,25 @@ public interface TransactionRepository
     List<Object[]> monthlyTotalsByType(@Param("userId") Long userId,
                                        @Param("start") LocalDate start,
                                        @Param("end") LocalDate end);
+
+    /**
+     * Vài cặp "ghi chú -> tên danh mục" GẦN ĐÂY (chỉ giao dịch có ghi chú), mới nhất trước.
+     * Dùng làm ví dụ để AI học thói quen phân loại của chính người dùng.
+     */
+    @Query("""
+            SELECT t.note AS note, c.name AS category
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.user.id = :userId
+              AND t.note IS NOT NULL
+              AND t.note <> ''
+            ORDER BY t.occurredAt DESC, t.id DESC
+            """)
+    List<NoteCategoryView> recentNoteCategories(@Param("userId") Long userId, Pageable pageable);
+
+    /** Projection: chỉ lấy ghi chú + tên danh mục (tránh tải lazy cả entity). */
+    interface NoteCategoryView {
+        String getNote();
+        String getCategory();
+    }
 }
