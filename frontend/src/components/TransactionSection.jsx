@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions, parseTransaction, isParseEnabled } from "../api/finance";
+import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions, parseTransaction, isParseEnabled, createCategory } from "../api/finance";
 import { formatVND } from "../utils/format";
 import Modal from "./Modal";
 import ReceiptUpload from "./ReceiptUpload";
@@ -21,8 +21,11 @@ export default function TransactionSection({ month, year, categories, reloadToke
   const [quickText, setQuickText] = useState("");
   const [parsing, setParsing] = useState(false);
   const [aiHint, setAiHint] = useState("");
+  // Danh mục AI gợi ý nhưng CHƯA CÓ ({name, type}) -> hiện nút "+ Tạo danh mục này".
+  const [suggestedCat, setSuggestedCat] = useState(null);
   // Khi AI tách >1 giao dịch: danh sách chờ duyệt rồi "Thêm tất cả".
   const [batch, setBatch] = useState(null);
+  const [batchKey, setBatchKey] = useState(0);   // đổi mỗi lần parse -> remount BatchPreview
 
   useEffect(() => {
     isParseEnabled().then(setAiEnabled).catch(() => setAiEnabled(false));
@@ -86,12 +89,14 @@ export default function TransactionSection({ month, year, categories, reloadToke
     if (!quickText.trim()) return;
     setError("");
     setAiHint("");
+    setSuggestedCat(null);
     setParsing(true);
     try {
       const results = await parseTransaction(quickText.trim());
       // Nhiều giao dịch -> mở bảng "Thêm tất cả"; 1 giao dịch -> điền sẵn form như cũ.
       if (results.length > 1) {
         setBatch(results);
+        setBatchKey((k) => k + 1);
         setQuickText("");
         return;
       }
@@ -101,19 +106,28 @@ export default function TransactionSection({ month, year, categories, reloadToke
       if (p.note != null) setNote(p.note);
       setCategoryId(p.categoryId != null ? String(p.categoryId) : "");
 
-      // Gom các điểm cần người dùng bổ sung (thiếu tiền / danh mục chưa có).
-      const hints = [];
-      if (p.amount == null) hints.push("chưa nhận ra số tiền — hãy nhập số tiền");
-      if (p.categoryId == null && p.categoryName) {
-        hints.push(`gợi ý danh mục "${p.categoryName}" (${p.type === "INCOME" ? "Thu" : "Chi"}) — hãy chọn hoặc tạo`);
-      }
-      setAiHint(hints.length ? "⚠️ " + hints.join("; ") + "." : "");
+      // Thiếu tiền -> nhắc; danh mục chưa có -> để dành cho nút "+ Tạo danh mục này".
+      setAiHint(p.amount == null ? "⚠️ Chưa nhận ra số tiền — hãy nhập số tiền." : "");
+      setSuggestedCat(p.categoryId == null && p.categoryName ? { name: p.categoryName, type: p.type } : null);
       setQuickText("");
     } catch (err) {
       const data = err.response?.data;
       setError(data?.message || "Không phân tích được, hãy thử lại hoặc nhập tay.");
     } finally {
       setParsing(false);
+    }
+  }
+
+  // Tạo nhanh danh mục AI gợi ý rồi chọn luôn cho form.
+  async function handleCreateSuggested() {
+    if (!suggestedCat) return;
+    try {
+      const c = await createCategory({ name: suggestedCat.name, type: suggestedCat.type });
+      setCategoryId(String(c.id));
+      setSuggestedCat(null);
+      onChanged();   // tải lại danh sách danh mục để select có lựa chọn mới
+    } catch (err) {
+      setError(err.response?.data?.message || "Không tạo được danh mục");
     }
   }
 
@@ -160,11 +174,19 @@ export default function TransactionSection({ month, year, categories, reloadToke
         </form>
       )}
       {aiHint && <div className="alert hint">{aiHint}</div>}
+      {suggestedCat && (
+        <div className="alert hint suggest-cat">
+          <span>AI gợi ý danh mục "<strong>{suggestedCat.name}</strong>" ({suggestedCat.type === "INCOME" ? "Thu" : "Chi"}) — chưa có trong danh sách.</span>
+          <button type="button" className="btn auto sm" onClick={handleCreateSuggested}>+ Tạo danh mục này</button>
+        </div>
+      )}
 
       {batch && (
         <BatchPreview
+          key={batchKey}
           items={batch}
           categories={categories}
+          onCreateCategory={async (name, type) => await createCategory({ name, type })}
           onCancel={() => setBatch(null)}
           onDone={() => { setBatch(null); onChanged(); }}
         />
@@ -173,7 +195,7 @@ export default function TransactionSection({ month, year, categories, reloadToke
       <form className="inline-form" onSubmit={handleAdd}>
         <input type="number" step="0.01" min="0.01" placeholder="Số tiền" value={amount}
                onChange={(e) => setAmount(e.target.value)} required />
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+        <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setSuggestedCat(null); }} required>
           <option value="">-- Danh mục --</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name} ({c.type === "INCOME" ? "Thu" : "Chi"})</option>
@@ -307,7 +329,7 @@ function EditTransactionModal({ tx, categories, onClose, onSaved }) {
 }
 
 // Bảng xem trước khi AI tách ra NHIỀU giao dịch: sửa nhanh rồi "Thêm tất cả".
-function BatchPreview({ items, categories, onCancel, onDone }) {
+function BatchPreview({ items, categories, onCreateCategory, onCancel, onDone }) {
   const today = () => new Date().toISOString().slice(0, 10);
   const [rows, setRows] = useState(() =>
     items.map((p) => ({
@@ -316,14 +338,30 @@ function BatchPreview({ items, categories, onCancel, onDone }) {
       occurredAt: p.occurredAt || today(),
       note: p.note || "",
       suggested: p.categoryId == null ? p.categoryName : null,
+      suggestedType: p.type,
     }))
   );
+  const [created, setCreated] = useState([]);   // danh mục tạo tại chỗ trong batch
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const allCats = [...categories, ...created];
 
   const update = (i, field, val) =>
     setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, [field]: val } : r)));
   const removeRow = (i) => setRows((rs) => rs.filter((_, idx) => idx !== i));
+
+  // Tạo nhanh danh mục AI gợi ý cho dòng i rồi chọn luôn.
+  async function createFor(i) {
+    const r = rows[i];
+    if (!r.suggested) return;
+    try {
+      const c = await onCreateCategory(r.suggested, r.suggestedType);
+      setCreated((cs) => [...cs, c]);
+      setRows((rs) => rs.map((row, idx) => (idx === i ? { ...row, categoryId: String(c.id), suggested: null } : row)));
+    } catch {
+      setError("Không tạo được danh mục.");
+    }
+  }
 
   async function addAll() {
     const valid = rows.filter((r) => Number(r.amount) > 0 && r.categoryId);
@@ -364,10 +402,13 @@ function BatchPreview({ items, categories, onCancel, onDone }) {
                  onChange={(e) => update(i, "amount", e.target.value)} />
           <select value={r.categoryId} onChange={(e) => update(i, "categoryId", e.target.value)}>
             <option value="">{r.suggested ? `-- ${r.suggested}? --` : "-- Danh mục --"}</option>
-            {categories.map((c) => (
+            {allCats.map((c) => (
               <option key={c.id} value={c.id}>{c.name} ({c.type === "INCOME" ? "Thu" : "Chi"})</option>
             ))}
           </select>
+          {!r.categoryId && r.suggested && (
+            <button className="btn auto sm" onClick={() => createFor(i)} title={`Tạo danh mục "${r.suggested}"`}>+ Tạo</button>
+          )}
           <input type="date" value={r.occurredAt} onChange={(e) => update(i, "occurredAt", e.target.value)} />
           <input type="text" placeholder="Ghi chú" value={r.note} onChange={(e) => update(i, "note", e.target.value)} />
           <button className="btn danger sm auto" onClick={() => removeRow(i)} title="Bỏ dòng">✕</button>
