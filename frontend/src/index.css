@@ -91,6 +91,31 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: var
 .quick-form { margin-bottom: 10px; }
 .quick-input { flex: 1; min-width: 220px; }
 
+/* ===== Chat (Trợ lý AI) ===== */
+.chat-window {
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 320px; max-height: 52vh; overflow-y: auto;
+  padding: 8px 4px; margin-bottom: 12px;
+}
+.chat-welcome { margin: auto 0; }
+.chat-welcome .chips { margin-top: 10px; }
+.chip.suggest {
+  background: #eff6ff; color: var(--primary); border: 1px solid var(--border);
+  padding: 8px 12px; cursor: pointer; text-align: left;
+}
+.chip.suggest:hover { background: #e0e9ff; }
+.chat-msg { display: flex; }
+.chat-msg.user { justify-content: flex-end; }
+.chat-msg.assistant { justify-content: flex-start; }
+.chat-bubble {
+  max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5;
+}
+.chat-msg.user .chat-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg.assistant .chat-bubble { background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.chat-line { margin: 0 0 6px; }
+.chat-line:last-child { margin-bottom: 0; }
+.chat-input input { flex: 1; min-width: 160px; }
+
 /* ===== Batch preview (AI tách nhiều giao dịch) ===== */
 .batch-preview {
   background: #eff6ff; border: 1px solid var(--primary);

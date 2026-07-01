@@ -6,6 +6,7 @@ import { getCategories } from "../api/finance";
 // Các mục điều hướng ở sidebar. `end` để mục "Tổng quan" (/) không bị active lan sang trang con.
 const NAV = [
   { to: "/", label: "Tổng quan", icon: "📊", end: true },
+  { to: "/assistant", label: "Trợ lý AI", icon: "💬" },
   { to: "/transactions", label: "Giao dịch", icon: "💸" },
   { to: "/budgets", label: "Ngân sách & Mục tiêu", icon: "🎯" },
   { to: "/recurring", label: "Định kỳ", icon: "🔁" },

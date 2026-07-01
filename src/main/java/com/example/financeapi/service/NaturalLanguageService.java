@@ -1,6 +1,7 @@
 package com.example.financeapi.service;
 
 import com.example.financeapi.ai.ExtractedTransaction;
+import com.example.financeapi.ai.GeminiClient;
 import com.example.financeapi.dto.response.ParsedTransactionResponse;
 import com.example.financeapi.entity.Category;
 import com.example.financeapi.entity.User;
@@ -11,12 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -37,41 +34,33 @@ import java.util.Map;
 public class NaturalLanguageService {
 
     private static final Logger log = LoggerFactory.getLogger(NaturalLanguageService.class);
-    private static final String GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
     private final CurrentUserService currentUserService;
     private final ObjectMapper objectMapper;
-    private final RestClient restClient;
-    private final String apiKey;
-    private final String model;
-    private final boolean enabled;
+    private final GeminiClient gemini;
 
     public NaturalLanguageService(CategoryRepository categoryRepository,
                                   TransactionRepository transactionRepository,
                                   CurrentUserService currentUserService,
                                   ObjectMapper objectMapper,
-                                  @Value("${app.ai.api-key:}") String apiKey,
-                                  @Value("${app.ai.model:gemini-2.5-flash-lite}") String model) {
+                                  GeminiClient gemini) {
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
         this.currentUserService = currentUserService;
         this.objectMapper = objectMapper;
-        this.apiKey = apiKey;
-        this.model = model;
-        this.enabled = apiKey != null && !apiKey.isBlank();
-        this.restClient = RestClient.builder().baseUrl(GEMINI_BASE).build();
+        this.gemini = gemini;
     }
 
     /** Có cấu hình key hay chưa — frontend dùng để ẩn/hiện ô nhập nhanh. */
     public boolean isEnabled() {
-        return enabled;
+        return gemini.isEnabled();
     }
 
     /** Một câu có thể chứa NHIỀU giao dịch -> trả về danh sách (luôn ≥ 1 phần tử). */
     public List<ParsedTransactionResponse> parse(String text) {
-        if (!enabled) {
+        if (!gemini.isEnabled()) {
             throw new BadRequestException("Tính năng AI chưa được cấu hình (thiếu GEMINI_API_KEY).");
         }
         User user = currentUserService.getCurrentUser();
@@ -92,30 +81,20 @@ public class NaturalLanguageService {
                 )
         );
 
+        JsonNode response = gemini.generate(body);   // GeminiClient lo retry + lỗi 429/503
+
         ExtractedTransaction[] extracted;
         try {
-            JsonNode response = postWithRetry(body);
-
-            String json = response.path("candidates").path(0)
-                    .path("content").path("parts").path(0).path("text").asText(null);
+            String json = gemini.firstText(response);
             if (json == null || json.isBlank()) {
                 throw new BadRequestException("AI không hiểu được nội dung, hãy thử lại.");
             }
             extracted = objectMapper.readValue(json, ExtractedTransaction[].class);
         } catch (BadRequestException e) {
             throw e;
-        } catch (HttpClientErrorException e) {
-            log.warn("Gemini lỗi {}: {}", e.getStatusCode(), e.getMessage());
-            if (e.getStatusCode().value() == 429) {
-                throw new BadRequestException("Đã hết lượt phân tích AI miễn phí hôm nay — hãy nhập tay hoặc thử lại sau.");
-            }
-            throw new BadRequestException("Không phân tích được lúc này, hãy thử lại hoặc nhập tay.");
-        } catch (HttpServerErrorException e) {
-            log.warn("Gemini quá tải {}: {}", e.getStatusCode(), e.getMessage());
-            throw new BadRequestException("Dịch vụ AI đang quá tải, hãy thử lại sau giây lát hoặc nhập tay.");
         } catch (Exception e) {
-            log.warn("Gọi Gemini thất bại: {}", e.getMessage());
-            throw new BadRequestException("Không phân tích được lúc này, hãy thử lại hoặc nhập tay.");
+            log.warn("Đọc kết quả Gemini thất bại: {}", e.getMessage());
+            throw new BadRequestException("Không phân tích được, hãy thử lại hoặc nhập tay.");
         }
 
         if (extracted.length == 0) {
@@ -126,25 +105,6 @@ public class NaturalLanguageService {
             result.add(resolve(ex, categories));
         }
         return result;
-    }
-
-    /** Gọi Gemini; nếu gặp lỗi 5xx (vd 503 quá tải) thì thử lại 1 lần trước khi bỏ cuộc. */
-    private JsonNode postWithRetry(Map<String, Object> body) {
-        HttpServerErrorException last = null;
-        for (int attempt = 0; attempt < 2; attempt++) {
-            try {
-                return restClient.post()
-                        .uri("/models/{model}:generateContent", model)
-                        .header("x-goog-api-key", apiKey)
-                        .header("Content-Type", "application/json")
-                        .body(body)
-                        .retrieve()
-                        .body(JsonNode.class);
-            } catch (HttpServerErrorException e) {
-                last = e;   // 5xx tạm thời — thử lại
-            }
-        }
-        throw last;
     }
 
     /** Map kết quả thô về danh mục của user + chuẩn hóa ngày/số tiền. */

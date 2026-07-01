@@ -22,6 +22,9 @@ export const parseTransaction = (text) =>
   client.post("/api/transactions/parse", { text }).then((r) => r.data);
 export const isParseEnabled = () =>
   client.get("/api/transactions/parse-enabled").then((r) => r.data.enabled);
+// AI: trợ lý chat phân tích chi tiêu của kỳ đang xem.
+export const chatAi = (month, year, messages) =>
+  client.post("/api/ai/chat", { month, year, messages }).then((r) => r.data);
 export const deleteTransaction = (id) =>
   client.delete(`/api/transactions/${id}`);
 // Tải file CSV (responseType blob để nhận dữ liệu nhị phân của file).

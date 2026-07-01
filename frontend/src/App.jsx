@@ -3,6 +3,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardLayout from "./pages/DashboardLayout";
 import OverviewPage from "./pages/OverviewPage";
+import ChatPage from "./pages/ChatPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import BudgetsGoalsPage from "./pages/BudgetsGoalsPage";
 import RecurringPage from "./pages/RecurringPage";
@@ -27,6 +28,7 @@ export default function App() {
         }
       >
         <Route index element={<OverviewPage />} />
+        <Route path="assistant" element={<ChatPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="budgets" element={<BudgetsGoalsPage />} />
         <Route path="recurring" element={<RecurringPage />} />
