@@ -8,11 +8,15 @@ import com.example.financeapi.dto.response.MonthlyReportResponse;
 import com.example.financeapi.dto.response.MonthlySummary;
 import com.example.financeapi.dto.response.YearlyReportResponse;
 import com.example.financeapi.entity.CategoryType;
+import com.example.financeapi.entity.User;
 import com.example.financeapi.exception.BadRequestException;
+import com.example.financeapi.repository.TransactionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +33,16 @@ public class FinancialChatService {
 
     private final GeminiClient gemini;
     private final ReportService reportService;
+    private final TransactionRepository transactionRepository;
+    private final CurrentUserService currentUserService;
 
-    public FinancialChatService(GeminiClient gemini, ReportService reportService) {
+    public FinancialChatService(GeminiClient gemini, ReportService reportService,
+                                TransactionRepository transactionRepository,
+                                CurrentUserService currentUserService) {
         this.gemini = gemini;
         this.reportService = reportService;
+        this.transactionRepository = transactionRepository;
+        this.currentUserService = currentUserService;
     }
 
     public ChatResponse chat(int month, int year, List<ChatMessage> messages) {
@@ -110,6 +120,24 @@ public class FinancialChatService {
                   .append(", chi ").append(fmt(ms.expense())).append("\n");
             }
         }
+
+        // Vài giao dịch LỚN NHẤT của tháng (để trả lời câu hỏi ở cấp giao dịch, không nhầm với tổng danh mục).
+        User user = currentUserService.getCurrentUser();
+        LocalDate start = LocalDate.of(year, month, 1);
+        var top = transactionRepository.topTransactions(user.getId(), start, start.plusMonths(1), PageRequest.of(0, 8));
+        sb.append("Các giao dịch lớn nhất trong tháng ").append(month)
+          .append(" (chỉ vài khoản lớn nhất, KHÔNG phải toàn bộ):\n");
+        if (top.isEmpty()) {
+            sb.append("- (chưa có giao dịch)\n");
+        } else {
+            for (var t : top) {
+                sb.append("- ").append(fmt(t.getAmount())).append(" đ")
+                  .append(" · ").append(t.getType() == CategoryType.INCOME ? "thu" : "chi")
+                  .append(" · ").append(t.getCategory())
+                  .append(" · \"").append(t.getNote() == null ? "" : t.getNote()).append("\"")
+                  .append(" · ").append(t.getOccurredAt()).append("\n");
+            }
+        }
         return sb.toString();
     }
 
@@ -117,6 +145,9 @@ public class FinancialChatService {
         return """
                 Bạn là trợ lý tài chính cá nhân, trả lời bằng tiếng Việt, ngắn gọn và thân thiện.
                 CHỈ dựa vào SỐ LIỆU bên dưới để trả lời; TUYỆT ĐỐI không bịa số.
+                PHÂN BIỆT RÕ: "chi theo danh mục" là TỔNG của cả danh mục (nhiều giao dịch cộng lại),
+                KHÁC với một GIAO DỊCH riêng lẻ trong danh sách "giao dịch lớn nhất". Đừng nhầm tổng danh mục thành một giao dịch.
+                Danh sách "giao dịch lớn nhất" chỉ gồm vài khoản lớn nhất, KHÔNG phải toàn bộ; nếu bị hỏi về giao dịch không có trong đó, hoặc cần ĐẾM số lần, hãy nói rõ bạn chỉ có các khoản lớn nhất chứ không có toàn bộ chi tiết.
                 Nếu câu hỏi vượt ngoài dữ liệu đang có, hãy nói rõ là chưa có dữ liệu đó.
                 Tiền tệ là VND; khi nêu số tiền hãy thêm dấu phân cách nghìn cho dễ đọc (vd 1.500.000 đ).
                 Có thể đưa 1 nhận xét hoặc gợi ý tiết kiệm ngắn nếu phù hợp.

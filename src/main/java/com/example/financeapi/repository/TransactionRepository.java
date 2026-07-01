@@ -1,6 +1,7 @@
 package com.example.financeapi.repository;
 
 import com.example.financeapi.dto.response.CategoryBreakdown;
+import com.example.financeapi.entity.CategoryType;
 import com.example.financeapi.entity.Transaction;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -93,5 +95,33 @@ public interface TransactionRepository
     interface NoteCategoryView {
         String getNote();
         String getCategory();
+    }
+
+    /**
+     * Các giao dịch LỚN NHẤT trong khoảng [start, end) của 1 user (số tiền giảm dần).
+     * Dùng cho trợ lý chat trả lời câu hỏi ở cấp GIAO DỊCH ("giao dịch lớn nhất", "mua gì").
+     */
+    @Query("""
+            SELECT t.amount AS amount, c.name AS category, c.type AS type,
+                   t.note AS note, t.occurredAt AS occurredAt
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.user.id = :userId
+              AND t.occurredAt >= :start
+              AND t.occurredAt <  :end
+            ORDER BY t.amount DESC, t.id DESC
+            """)
+    List<TopTxView> topTransactions(@Param("userId") Long userId,
+                                    @Param("start") LocalDate start,
+                                    @Param("end") LocalDate end,
+                                    Pageable pageable);
+
+    /** Projection cho 1 giao dịch lớn (không tải cả entity). */
+    interface TopTxView {
+        BigDecimal getAmount();
+        String getCategory();
+        CategoryType getType();
+        String getNote();
+        LocalDate getOccurredAt();
     }
 }
