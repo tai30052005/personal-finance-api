@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMonthlyReport } from "../api/finance";
-import { formatVND } from "../utils/format";
+import { formatVND, categoryColor } from "../utils/format";
 
 // Báo cáo tháng: tổng thu / chi / số dư + phân tích theo danh mục.
 export default function SummarySection({ month, year, reloadToken }) {
@@ -21,16 +21,16 @@ export default function SummarySection({ month, year, reloadToken }) {
     <section className="card">
       <h2>Báo cáo tháng {month}/{year}</h2>
       <div className="stat-grid">
-        <div className="stat">
-          <span className="muted">Tổng thu</span>
+        <div className="stat income">
+          <div className="stat-head"><span className="stat-ico">📈</span><span className="muted">Tổng thu</span></div>
           <strong className="pos">{formatVND(report.totalIncome)}</strong>
         </div>
-        <div className="stat">
-          <span className="muted">Tổng chi</span>
+        <div className="stat expense">
+          <div className="stat-head"><span className="stat-ico">📉</span><span className="muted">Tổng chi</span></div>
           <strong className="neg">{formatVND(report.totalExpense)}</strong>
         </div>
-        <div className="stat">
-          <span className="muted">Số dư</span>
+        <div className="stat balance">
+          <div className="stat-head"><span className="stat-ico">💰</span><span className="muted">Số dư</span></div>
           <strong>{formatVND(report.balance)}</strong>
         </div>
       </div>
@@ -43,9 +43,14 @@ export default function SummarySection({ month, year, reloadToken }) {
           <tbody>
             {report.byCategory.map((b) => (
               <tr key={b.categoryId}>
-                <td>{b.categoryName}</td>
+                <td>
+                  <span className="cat-chip">
+                    <span className="cat-dot" style={{ background: categoryColor(b.categoryName) }} />
+                    {b.categoryName}
+                  </span>
+                </td>
                 <td>{b.type === "INCOME" ? "Thu" : "Chi"}</td>
-                <td className="right">{formatVND(b.total)}</td>
+                <td className={"right amount " + (b.type === "INCOME" ? "pos" : "neg")}>{formatVND(b.total)}</td>
               </tr>
             ))}
           </tbody>

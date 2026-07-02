@@ -34,6 +34,17 @@ export default function DashboardLayout() {
   // Đóng/mở sidebar trên màn hình nhỏ.
   const [navOpen, setNavOpen] = useState(false);
 
+  // Theme sáng/tối: đọc lựa chọn đã lưu, đổi bằng nút ở cuối sidebar.
+  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
+  const toggleTheme = useCallback(() => {
+    setDark((d) => {
+      const next = !d;
+      document.documentElement.dataset.theme = next ? "dark" : "";
+      localStorage.setItem("theme", next ? "dark" : "light");
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
   }, [reloadToken]);
@@ -58,6 +69,10 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
+        <button className="theme-toggle" onClick={toggleTheme}>
+          <span className="nav-icon">{dark ? "☀️" : "🌙"}</span>
+          {dark ? "Chế độ sáng" : "Chế độ tối"}
+        </button>
       </aside>
 
       <div className="dash-main">

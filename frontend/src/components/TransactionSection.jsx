@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction, exportTransactions, parseTransaction, isParseEnabled, createCategory } from "../api/finance";
-import { formatVND } from "../utils/format";
+import { formatVND, categoryColor } from "../utils/format";
 import Modal from "./Modal";
 import ReceiptUpload from "./ReceiptUpload";
 
@@ -233,7 +233,12 @@ export default function TransactionSection({ month, year, categories, reloadToke
             {list.map((t) => (
               <tr key={t.id}>
                 <td>{t.occurredAt}</td>
-                <td>{t.categoryName}</td>
+                <td>
+                  <span className="cat-chip">
+                    <span className="cat-dot" style={{ background: categoryColor(t.categoryName) }} />
+                    {t.categoryName}
+                  </span>
+                </td>
                 <td className="muted">
                   {t.note}
                   {t.receiptUrl && (
@@ -242,8 +247,8 @@ export default function TransactionSection({ month, year, categories, reloadToke
                     </a>
                   )}
                 </td>
-                <td className={"right " + (t.categoryType === "INCOME" ? "pos" : "neg")}>
-                  {formatVND(t.amount)}
+                <td className={"right amount " + (t.categoryType === "INCOME" ? "pos" : "neg")}>
+                  {t.categoryType === "INCOME" ? "+" : "−"}{formatVND(t.amount)}
                 </td>
                 <td className="right" style={{ whiteSpace: "nowrap" }}>
                   <button className="btn auto sm" onClick={() => setEditing(t)}>Sửa</button>{" "}
