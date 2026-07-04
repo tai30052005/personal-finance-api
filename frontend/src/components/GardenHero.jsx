@@ -1,0 +1,166 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getGoals, getBudgetStatus } from "../api/finance";
+import { formatVND } from "../utils/format";
+
+/**
+ * Hero "Khu vườn" (concept Vườn Xanh): mỗi mục tiêu tiết kiệm là một cái cây,
+ * vẽ bằng SVG và LỚN THEO % TIẾN ĐỘ THẬT — không dùng ảnh tĩnh.
+ *   < 25%  : mầm non      | 25–60% : bụi lá
+ *   60–99% : cây đơm nụ   | 100%   : nở hoa (nhãn vàng "hái quả")
+ * Chip thời tiết = tình hình ngân sách tháng (quang / mây / mưa).
+ */
+
+function Sprout() {
+  return (
+    <>
+      <ellipse cx="0" cy="0" rx="12" ry="3" fill="#6fa658" />
+      <path d="M0 0 C0 -5 0 -9 0 -13" stroke="#3e6b3a" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <path d="M0 -11 C-8 -13 -11 -19 -9 -24 C-3 -21 0 -17 0 -11 Z" fill="#7bb868" />
+      <path d="M0 -11 C8 -13 11 -19 9 -24 C3 -21 0 -17 0 -11 Z" fill="#569148" />
+    </>
+  );
+}
+
+function Bush() {
+  return (
+    <>
+      <ellipse cx="0" cy="0" rx="17" ry="4" fill="#6fa658" />
+      <path d="M0 0 C-7 -9 -11 -19 -9 -31 C-1 -24 2 -12 0 0 Z" fill="#569148" />
+      <path d="M0 0 C7 -9 11 -19 9 -31 C1 -24 -2 -12 0 0 Z" fill="#7bb868" />
+      <path d="M0 0 C-4 -12 -4 -25 0 -37 C4 -25 4 -12 0 0 Z" fill="#66a863" />
+      <path d="M0 0 C-10 -5 -16 -13 -17 -22 C-8 -18 -2 -9 0 0 Z" fill="#7bb868" />
+      <path d="M0 0 C10 -5 16 -13 17 -22 C8 -18 2 -9 0 0 Z" fill="#569148" />
+    </>
+  );
+}
+
+function Tree({ bloomed }) {
+  return (
+    <>
+      <ellipse cx="0" cy="0" rx="20" ry="4.5" fill="#6fa658" />
+      <path d="M0 0 C0 -18 -3 -38 0 -62" stroke="#6b4a2e" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M0 -34 C-7 -39 -14 -42 -19 -42" stroke="#6b4a2e" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M0 -48 C7 -53 14 -56 19 -56" stroke="#6b4a2e" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <circle cx="0" cy="-84" r="26" fill="#569148" />
+      <circle cx="-17" cy="-95" r="17" fill="#66a863" />
+      <circle cx="18" cy="-97" r="15" fill="#7bb868" />
+      <circle cx="0" cy="-108" r="14" fill="#82c177" />
+      {bloomed ? (
+        <>
+          <circle cx="-15" cy="-100" r="4" fill="#f4a9c4" />
+          <circle cx="14" cy="-104" r="4" fill="#f4a9c4" />
+          <circle cx="21" cy="-86" r="4" fill="#f4a9c4" />
+          <circle cx="-22" cy="-82" r="4" fill="#f4a9c4" />
+          <circle cx="2" cy="-92" r="4" fill="#f4a9c4" />
+          <circle cx="-4" cy="-114" r="3.5" fill="#f6c453" />
+          <circle cx="16" cy="-78" r="3.5" fill="#f6c453" />
+        </>
+      ) : (
+        <>
+          <ellipse cx="-12" cy="-102" rx="3.6" ry="4.8" fill="#efb8ce" />
+          <ellipse cx="12" cy="-95" rx="3.6" ry="4.8" fill="#efb8ce" />
+          <ellipse cx="1" cy="-116" rx="3.6" ry="4.8" fill="#efb8ce" />
+        </>
+      )}
+    </>
+  );
+}
+
+function Plant({ x, base, goal }) {
+  const pct = Math.round(goal.progressPercent || 0);
+  const p = Math.min(pct / 100, 1);
+  const done = goal.completed || pct >= 100;
+
+  let body, scale;
+  if (p < 0.25) { scale = 0.8 + p * 1.6; body = <Sprout />; }
+  else if (p < 0.6) { scale = 0.75 + (p - 0.25) * 0.8; body = <Bush />; }
+  else { scale = 0.8 + (p - 0.6) * 0.5; body = <Tree bloomed={done} />; }
+
+  const name = goal.name.length > 10 ? goal.name.slice(0, 9) + "…" : goal.name;
+  const label = done ? `${name} · hái quả!` : `${name} · ${pct}%`;
+  const w = label.length * 6.2 + 18;
+
+  return (
+    <g transform={`translate(${x} ${base})`}>
+      <g transform={`scale(${scale})`}>{body}</g>
+      <rect x={-w / 2} y="8" width={w} height="18" rx="9"
+            fill={done ? "#f2c24e" : "#ffffff"} opacity={done ? 1 : 0.92} />
+      <text x="0" y="21" fontSize="11" fontWeight="600" textAnchor="middle"
+            fill={done ? "#5c3d08" : "#3f6b34"}>{label}</text>
+    </g>
+  );
+}
+
+// Chip thời tiết từ % ngân sách đã dùng của tháng (logic thuần, không gọi AI).
+function weatherFrom(status) {
+  const withLimit = (status || []).filter((b) => Number(b.amountLimit) > 0);
+  if (withLimit.length === 0) return null;
+  const spent = withLimit.reduce((s, b) => s + Number(b.spent), 0);
+  const limit = withLimit.reduce((s, b) => s + Number(b.amountLimit), 0);
+  const pct = Math.round((spent / limit) * 100);
+  if (pct > 100) return { icon: "🌧️", text: `Mưa to · đã vượt ${pct}% ngân sách`, wet: true };
+  if (pct > 70) return { icon: "⛅", text: `Có mây · đã dùng ${pct}% ngân sách`, wet: false };
+  return { icon: "☀️", text: `Trời quang · mới dùng ${pct}% ngân sách`, wet: false };
+}
+
+// Vị trí cây theo số lượng (tối đa 4 cây, xếp theo tiến độ tăng dần).
+const SLOTS = { 1: [300], 2: [200, 400], 3: [130, 300, 470], 4: [95, 235, 375, 515] };
+
+export default function GardenHero({ month, year, reloadToken }) {
+  const [goals, setGoals] = useState(null);
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getGoals().then((d) => active && setGoals(d)).catch(() => active && setGoals([]));
+    getBudgetStatus(month, year)
+      .then((d) => active && setWeather(weatherFrom(d)))
+      .catch(() => {});
+    return () => { active = false; };
+  }, [month, year, reloadToken]);
+
+  if (goals === null) return <div className="garden-hero" />;
+
+  const shown = [...goals].sort((a, b) => (a.progressPercent || 0) - (b.progressPercent || 0)).slice(0, 4);
+  const xs = SLOTS[shown.length] || [];
+  const total = goals.reduce((s, g) => s + Number(g.currentAmount || 0), 0);
+
+  return (
+    <div className="garden-hero">
+      <svg viewBox="0 0 600 236" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <rect width="600" height="236" fill="#d9edf7" />
+        <circle cx="540" cy="42" r="24" fill="#f2c24e" opacity="0.35" />
+        <circle cx="540" cy="42" r="15" fill="#f2c24e" />
+        <g fill="#ffffff" opacity="0.9">
+          <ellipse cx="352" cy="34" rx="22" ry="8" /><ellipse cx="368" cy="28" rx="14" ry="7" />
+          <ellipse cx="452" cy="66" rx="16" ry="6" /><ellipse cx="463" cy="62" rx="10" ry="5" />
+        </g>
+        <path d="M356 92 C360 86 366 86 368 90 C370 86 376 86 378 92 C374 98 362 98 356 92 Z" fill="#e88aae" />
+        <path d="M0 156 C90 128 210 150 330 132 C420 120 520 132 600 122 L600 236 L0 236 Z" fill="#b9dca0" />
+        <path d="M0 186 C110 160 240 180 370 164 C460 154 540 162 600 156 L600 236 L0 236 Z" fill="#8fc276" />
+        <path d="M18 166 L18 202 M18 174 L42 166 M18 188 L42 180" stroke="#a8763e" strokeWidth="4" strokeLinecap="round" />
+        {shown.map((g, i) => (
+          <Plant key={g.id} x={xs[i]} base={200 - i * 7} goal={g} />
+        ))}
+      </svg>
+
+      <div className="gh-overlay">
+        <div className="gh-label">Tài sản trong vườn · {goals.length} cây đang trồng</div>
+        <div className="gh-total">{formatVND(total)}</div>
+        {weather && (
+          <span className={"gh-chip" + (weather.wet ? " wet" : "")}>
+            {weather.icon} {weather.text}
+          </span>
+        )}
+      </div>
+
+      {shown.length === 0 && (
+        <div className="gh-empty">
+          <span className="gh-chip">🌱 Khu vườn còn trống — gieo hạt giống đầu tiên nào!</span>
+          <Link to="/budgets" className="btn primary auto" style={{ width: "auto" }}>+ Gieo hạt (tạo mục tiêu)</Link>
+        </div>
+      )}
+    </div>
+  );
+}

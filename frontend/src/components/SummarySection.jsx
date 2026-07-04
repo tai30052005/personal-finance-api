@@ -3,7 +3,8 @@ import { getMonthlyReport } from "../api/finance";
 import { formatVND, categoryColor } from "../utils/format";
 
 // Báo cáo tháng: tổng thu / chi / số dư + phân tích theo danh mục.
-export default function SummarySection({ month, year, reloadToken }) {
+// compact=true (concept Vườn Xanh): ẩn 3 thẻ số vì BalanceCard đã hiển thị chúng.
+export default function SummarySection({ month, year, reloadToken, compact = false }) {
   const [report, setReport] = useState(null);
 
   // useEffect: chạy lại mỗi khi month/year/reloadToken đổi -> gọi API lấy báo cáo.
@@ -20,6 +21,7 @@ export default function SummarySection({ month, year, reloadToken }) {
   return (
     <section className="card">
       <h2>Báo cáo tháng {month}/{year}</h2>
+      {!compact && (
       <div className="stat-grid">
         <div className="stat income">
           <div className="stat-head"><span className="stat-ico">📈</span><span className="muted">Tổng thu</span></div>
@@ -34,6 +36,7 @@ export default function SummarySection({ month, year, reloadToken }) {
           <strong>{formatVND(report.balance)}</strong>
         </div>
       </div>
+      )}
 
       {report.byCategory.length > 0 && (
         <table>
