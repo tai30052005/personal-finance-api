@@ -1,25 +1,30 @@
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useConcept } from "../theme/ConceptContext";
 import { getCategories } from "../api/finance";
-
-// Các mục điều hướng ở sidebar. `end` để mục "Tổng quan" (/) không bị active lan sang trang con.
-const NAV = [
-  { to: "/", label: "Tổng quan", icon: "📊", end: true },
-  { to: "/assistant", label: "Trợ lý AI", icon: "💬" },
-  { to: "/transactions", label: "Giao dịch", icon: "💸" },
-  { to: "/budgets", label: "Ngân sách & Mục tiêu", icon: "🎯" },
-  { to: "/recurring", label: "Định kỳ", icon: "🔁" },
-  { to: "/categories", label: "Danh mục", icon: "🏷️" },
-];
 
 /**
  * Khung dùng chung cho mọi trang: sidebar trái + thanh trên.
  * Giữ state DÙNG CHUNG (kỳ tháng/năm, reloadToken, categories) và truyền xuống
  * các trang con qua Outlet context, để khi chuyển trang vẫn nhớ trạng thái.
+ * Brand + một vài nhãn đổi theo "concept" đang chọn (xem ConceptContext).
  */
 export default function DashboardLayout() {
   const { email, logout } = useAuth();
+  const { concept, dark, toggleDark } = useConcept();
+  const garden = concept === "garden";
+
+  // Nhãn concept dùng "vừa đủ": chỉ brand, trợ lý AI và nút sáng/tối đổi tên.
+  const nav = [
+    { to: "/", label: "Tổng quan", icon: garden ? "🌿" : "📊", end: true },
+    { to: "/assistant", label: garden ? "Bác Làm Vườn" : "Trợ lý AI", icon: garden ? "🧑‍🌾" : "💬" },
+    { to: "/transactions", label: "Giao dịch", icon: garden ? "📖" : "💸" },
+    { to: "/budgets", label: "Ngân sách & Mục tiêu", icon: garden ? "🌱" : "🎯" },
+    { to: "/recurring", label: "Định kỳ", icon: "🔁" },
+    { to: "/categories", label: "Danh mục", icon: "🏷️" },
+    { to: "/settings", label: "Cài đặt", icon: "⚙️" },
+  ];
 
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -34,17 +39,6 @@ export default function DashboardLayout() {
   // Đóng/mở sidebar trên màn hình nhỏ.
   const [navOpen, setNavOpen] = useState(false);
 
-  // Theme sáng/tối: đọc lựa chọn đã lưu, đổi bằng nút ở cuối sidebar.
-  const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
-  const toggleTheme = useCallback(() => {
-    setDark((d) => {
-      const next = !d;
-      document.documentElement.dataset.theme = next ? "dark" : "";
-      localStorage.setItem("theme", next ? "dark" : "light");
-      return next;
-    });
-  }, []);
-
   useEffect(() => {
     getCategories().then(setCategories).catch(() => {});
   }, [reloadToken]);
@@ -54,9 +48,9 @@ export default function DashboardLayout() {
   return (
     <div className={"dash-layout" + (navOpen ? " nav-open" : "")}>
       <aside className="sidebar">
-        <div className="sidebar-brand">💰 Finance</div>
+        <div className="sidebar-brand">{garden ? "🌱 Vườn Xanh" : "💰 Finance"}</div>
         <nav className="sidebar-nav">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -69,9 +63,9 @@ export default function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <button className="theme-toggle" onClick={toggleTheme}>
+        <button className="theme-toggle" onClick={toggleDark}>
           <span className="nav-icon">{dark ? "☀️" : "🌙"}</span>
-          {dark ? "Chế độ sáng" : "Chế độ tối"}
+          {garden ? (dark ? "Vườn sáng" : "Vườn đêm") : (dark ? "Chế độ sáng" : "Chế độ tối")}
         </button>
       </aside>
 

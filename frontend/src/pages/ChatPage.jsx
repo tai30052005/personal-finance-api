@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import MonthPicker from "../components/MonthPicker";
+import { useConcept } from "../theme/ConceptContext";
 import { chatAi, isParseEnabled } from "../api/finance";
 
 // Gợi ý câu hỏi để người dùng bấm nhanh.
@@ -22,6 +23,8 @@ function renderContent(text) {
 // Trợ lý AI: hỏi–đáp về chi tiêu của kỳ (tháng/năm) đang chọn.
 export default function ChatPage() {
   const { month, year, changePeriod } = useOutletContext();
+  const { concept } = useConcept();
+  const assistantName = concept === "garden" ? "🧑‍🌾 Bác Làm Vườn" : "💬 Trợ lý AI";
   const [aiEnabled, setAiEnabled] = useState(true);
   const [messages, setMessages] = useState([]);   // {role: 'user'|'assistant', text}
   const [input, setInput] = useState("");
@@ -58,7 +61,7 @@ export default function ChatPage() {
   if (!aiEnabled) {
     return (
       <section className="card">
-        <h2>💬 Trợ lý AI</h2>
+        <h2>{assistantName}</h2>
         <p className="muted">Tính năng AI chưa được cấu hình (thiếu GEMINI_API_KEY).</p>
       </section>
     );
@@ -69,7 +72,7 @@ export default function ChatPage() {
       <MonthPicker month={month} year={year} onChange={changePeriod} />
       <section className="card chat-card">
         <div className="section-head">
-          <h2>💬 Trợ lý AI</h2>
+          <h2>{assistantName}</h2>
           <span className="muted">Đang phân tích tháng {month}/{year}</span>
         </div>
 

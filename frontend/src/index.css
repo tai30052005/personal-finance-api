@@ -59,6 +59,55 @@
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+/* ============================================================
+   Concept "Vườn Xanh": ghi đè biến màu (2 chế độ sáng/tối).
+   Chọn trong trang Cài đặt -> <html data-concept="garden">.
+   ============================================================ */
+[data-concept="garden"] {
+  --bg: #f3f6ee;
+  --card: #ffffff;
+  --text: #1c2b20;
+  --muted: #7a8873;
+  --border: #e0e5d6;
+  --input-bg: #ffffff;
+  --primary: #3f8a54;
+  --primary-d: #2f6b3c;
+  --primary-bg: #eaf4e4;
+  --primary-bg-2: #d9ecd0;
+  --danger: #c4574e;
+  --danger-bg: #fbe9e7;
+  --success: #3f8a54;
+  --success-bg: #eaf4e4;
+  --balance-bg: #16281c;
+  --balance-text: #f0f8f1;
+  --balance-muted: #8faf98;
+  --sidebar-bg: #14261b;
+  --sidebar-text: #8aa794;
+  --sidebar-active-bg: rgba(108, 181, 109, 0.22);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+}
+
+[data-concept="garden"][data-theme="dark"] {
+  --bg: #0c1710;
+  --card: #14231a;
+  --text: #dceadf;
+  --muted: #8fa998;
+  --border: #263a2d;
+  --input-bg: #0f1c14;
+  --primary: #5fb377;
+  --primary-d: #7cc790;
+  --primary-bg: rgba(95, 179, 119, 0.16);
+  --primary-bg-2: rgba(95, 179, 119, 0.28);
+  --danger: #e07b72;
+  --danger-bg: rgba(224, 123, 114, 0.15);
+  --success: #6fcf8a;
+  --success-bg: rgba(111, 207, 138, 0.15);
+  --balance-bg: #1d3526;
+  --sidebar-bg: #0a130d;
+  --sidebar-text: #7a9585;
+  --sidebar-active-bg: rgba(95, 179, 119, 0.28);
+}
+
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); transition: background-color 0.2s; }
 body, .card, .btn, input, select, .topbar, .stat, .budget-item, .chat-bubble {
@@ -342,6 +391,30 @@ th { color: var(--muted); font-weight: 600; }
 .receipt-preview img {
   width: 64px; height: 64px; object-fit: cover;
   border-radius: 8px; border: 1px solid var(--border);
+}
+
+/* ===== Cài đặt: chọn concept ===== */
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.concept-card {
+  text-align: left; background: var(--bg); border: 2px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; cursor: pointer;
+  display: grid; gap: 6px; font-family: inherit; color: var(--text); font-size: 14px;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.concept-card:hover { border-color: var(--primary); }
+.concept-card.active { border-color: var(--primary); background: var(--primary-bg); }
+.concept-card strong { font-size: 15px; }
+.concept-swatch { display: flex; gap: 6px; margin-bottom: 2px; }
+.sw { width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(128, 128, 128, 0.25); }
+.concept-swatch[data-c="classic"] .sw:nth-child(1) { background: #0f172a; }
+.concept-swatch[data-c="classic"] .sw:nth-child(2) { background: #2563eb; }
+.concept-swatch[data-c="classic"] .sw:nth-child(3) { background: #f4f6fb; }
+.concept-swatch[data-c="garden"] .sw:nth-child(1) { background: #14261b; }
+.concept-swatch[data-c="garden"] .sw:nth-child(2) { background: #3f8a54; }
+.concept-swatch[data-c="garden"] .sw:nth-child(3) { background: #d3ebf6; }
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
 }
 
 /* ===== Category chips (trang Danh mục) ===== */

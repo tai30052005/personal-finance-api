@@ -8,6 +8,7 @@ import TransactionsPage from "./pages/TransactionsPage";
 import BudgetsGoalsPage from "./pages/BudgetsGoalsPage";
 import RecurringPage from "./pages/RecurringPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import SettingsPage from "./pages/SettingsPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Khai báo các "đường" (route) của app.
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="budgets" element={<BudgetsGoalsPage />} />
         <Route path="recurring" element={<RecurringPage />} />
         <Route path="categories" element={<CategoriesPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Đường lạ -> về trang chủ */}
