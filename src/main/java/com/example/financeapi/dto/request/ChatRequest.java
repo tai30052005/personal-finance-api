@@ -5,7 +5,10 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-/** Yêu cầu chat: kỳ đang xem (tháng/năm) + toàn bộ lịch sử hội thoại. */
+/**
+ * Yêu cầu chat: kỳ đang xem (tháng/năm) + toàn bộ lịch sử hội thoại.
+ * persona (tùy chọn): "garden" -> trợ lý nhập vai "Bác Làm Vườn" (concept Vườn Xanh).
+ */
 public record ChatRequest(
 
         @NotNull(message = "Thiếu tháng")
@@ -15,6 +18,8 @@ public record ChatRequest(
         Integer year,
 
         @NotEmpty(message = "Chưa có câu hỏi")
-        List<ChatMessage> messages
+        List<ChatMessage> messages,
+
+        String persona
 ) {
 }

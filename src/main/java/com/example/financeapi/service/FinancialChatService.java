@@ -45,7 +45,7 @@ public class FinancialChatService {
         this.currentUserService = currentUserService;
     }
 
-    public ChatResponse chat(int month, int year, List<ChatMessage> messages) {
+    public ChatResponse chat(int month, int year, List<ChatMessage> messages, String persona) {
         if (!gemini.isEnabled()) {
             throw new BadRequestException("Tính năng AI chưa được cấu hình (thiếu GEMINI_API_KEY).");
         }
@@ -54,6 +54,7 @@ public class FinancialChatService {
         }
 
         String summary = buildSummary(month, year);
+        boolean garden = "garden".equalsIgnoreCase(persona);
 
         // Lịch sử hội thoại -> định dạng contents của Gemini (user/model).
         List<Map<String, Object>> contents = new ArrayList<>();
@@ -64,7 +65,7 @@ public class FinancialChatService {
         }
 
         Map<String, Object> body = Map.of(
-                "system_instruction", Map.of("parts", List.of(Map.of("text", buildSystemPrompt(summary)))),
+                "system_instruction", Map.of("parts", List.of(Map.of("text", buildSystemPrompt(summary, garden)))),
                 "contents", contents,
                 "generationConfig", Map.of(
                         "temperature", 0.3,
@@ -141,8 +142,15 @@ public class FinancialChatService {
         return sb.toString();
     }
 
-    private String buildSystemPrompt(String summary) {
-        return """
+    private String buildSystemPrompt(String summary, boolean garden) {
+        // Persona "Bác Làm Vườn" (concept Vườn Xanh): đổi GIỌNG, không đổi luật về số liệu.
+        String personaBlock = !garden ? "" : """
+                NHẬP VAI: bạn là "Bác Làm Vườn" — người trông coi khu vườn tài chính của người dùng,
+                nơi mỗi mục tiêu tiết kiệm là một cái cây, chi tiêu là tưới nước, thu nhập là nắng.
+                Xưng "bác", giọng hiền và ấm; thỉnh thoảng dùng ẩn dụ vườn tược (gieo hạt, tưới cây,
+                mưa bão, mùa vụ) cho sinh động — nhưng MỌI CON SỐ vẫn phải nêu chính xác, rõ ràng.
+                """;
+        return personaBlock + """
                 Bạn là trợ lý tài chính cá nhân, trả lời bằng tiếng Việt, ngắn gọn và thân thiện.
                 CHỈ dựa vào SỐ LIỆU bên dưới để trả lời; TUYỆT ĐỐI không bịa số.
                 PHÂN BIỆT RÕ: "chi theo danh mục" là TỔNG của cả danh mục (nhiều giao dịch cộng lại),

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { getBudgetStatus, setBudget } from "../api/finance";
 import { formatVND } from "../utils/format";
+import { useConcept } from "../theme/ConceptContext";
 
 // Ngân sách tháng + CẢNH BÁO VƯỢT (thanh đỏ khi over budget).
 export default function BudgetSection({ month, year, categories, reloadToken, onChanged }) {
+  const { concept } = useConcept();
+  const garden = concept === "garden";
   const [status, setStatus] = useState([]);
   const [categoryId, setCategoryId] = useState("");
   const [amountLimit, setAmountLimit] = useState("");
@@ -40,7 +43,7 @@ export default function BudgetSection({ month, year, categories, reloadToken, on
 
   return (
     <section className="card">
-      <h2>Ngân sách tháng {month}/{year}</h2>
+      <h2>{garden ? "💧 Luống ngân sách" : "Ngân sách"} tháng {month}/{year}</h2>
 
       {status.length === 0 && <p className="muted">Chưa có ngân sách nào cho tháng này.</p>}
 

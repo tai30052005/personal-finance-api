@@ -23,6 +23,6 @@ public class AiChatController {
     /** POST /api/ai/chat — hỏi trợ lý về chi tiêu của kỳ đang xem. */
     @PostMapping("/chat")
     public ChatResponse chat(@Valid @RequestBody ChatRequest request) {
-        return chatService.chat(request.month(), request.year(), request.messages());
+        return chatService.chat(request.month(), request.year(), request.messages(), request.persona());
     }
 }

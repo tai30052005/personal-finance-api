@@ -49,7 +49,7 @@ export default function ChatPage() {
     setInput("");
     setSending(true);
     try {
-      const res = await chatAi(month, year, next);
+      const res = await chatAi(month, year, next, concept === "garden" ? "garden" : null);
       setMessages([...next, { role: "assistant", text: res.answer }]);
     } catch (err) {
       setError(err.response?.data?.message || "Không hỏi được lúc này, hãy thử lại.");
