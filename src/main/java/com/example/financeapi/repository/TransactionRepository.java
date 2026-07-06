@@ -124,4 +124,18 @@ public interface TransactionRepository
         String getNote();
         LocalDate getOccurredAt();
     }
+
+    /**
+     * Số giao dịch GHI trong từng ngày (theo createdAt) kể từ :since — đo mức độ
+     * "chăm ghi chép" của người dùng (heatmap chuỗi ngày chăm vườn, concept Vườn Xanh).
+     */
+    @Query("""
+            SELECT cast(t.createdAt as date), COUNT(t.id)
+            FROM Transaction t
+            WHERE t.user.id = :userId
+              AND t.createdAt >= :since
+            GROUP BY cast(t.createdAt as date)
+            """)
+    List<Object[]> activityByDay(@Param("userId") Long userId,
+                                 @Param("since") java.time.LocalDateTime since);
 }

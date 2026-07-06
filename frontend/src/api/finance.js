@@ -39,6 +39,9 @@ export const getYearlyReport = (year) =>
   client.get("/api/reports/yearly", { params: { year } }).then((r) => r.data);
 export const getInsights = (month, year) =>
   client.get("/api/reports/insights", { params: { month, year } }).then((r) => r.data);
+// Số giao dịch GHI theo ngày (heatmap "chăm vườn đều tay").
+export const getActivity = (days = 28) =>
+  client.get("/api/reports/activity", { params: { days } }).then((r) => r.data);
 
 // ----- Recurring transactions (giao dịch định kỳ) -----
 export const getRecurring = () =>

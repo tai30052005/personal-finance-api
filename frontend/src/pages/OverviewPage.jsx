@@ -4,6 +4,7 @@ import MonthPicker from "../components/MonthPicker";
 import GardenHero from "../components/GardenHero";
 import BalanceCard from "../components/BalanceCard";
 import GardenAdvisorBanner from "../components/GardenAdvisorBanner";
+import GardenStreakCard from "../components/GardenStreakCard";
 import SummarySection from "../components/SummarySection";
 import InsightsSection from "../components/InsightsSection";
 import ChartsSection from "../components/ChartsSection";
@@ -26,6 +27,7 @@ export default function OverviewPage() {
         </div>
       )}
       {garden && <GardenAdvisorBanner month={month} year={year} reloadToken={reloadToken} />}
+      {garden && <GardenStreakCard reloadToken={reloadToken} />}
       <SummarySection month={month} year={year} reloadToken={reloadToken} compact={garden} />
       <InsightsSection month={month} year={year} reloadToken={reloadToken} />
       <ChartsSection month={month} year={year} reloadToken={reloadToken} />

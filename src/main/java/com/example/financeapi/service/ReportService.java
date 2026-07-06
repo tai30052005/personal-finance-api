@@ -1,5 +1,6 @@
 package com.example.financeapi.service;
 
+import com.example.financeapi.dto.response.ActivityDay;
 import com.example.financeapi.dto.response.CategoryBreakdown;
 import com.example.financeapi.dto.response.InsightsResponse;
 import com.example.financeapi.dto.response.MonthlyReportResponse;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -120,6 +122,27 @@ public class ReportService {
                 incomeChange, expenseChange,
                 top != null ? top.categoryName() : null,
                 top != null ? top.total() : null);
+    }
+
+    /**
+     * Hoạt động ghi chép N ngày gần nhất (đếm giao dịch theo NGÀY TẠO).
+     * Dùng cho heatmap "chăm vườn đều tay" — chỉ trả các ngày có ghi chép.
+     */
+    @Transactional(readOnly = true)
+    public List<ActivityDay> activity(int days) {
+        if (days < 1 || days > 90) {
+            throw new BadRequestException("days phải nằm trong khoảng 1..90");
+        }
+        User user = currentUserService.getCurrentUser();
+        LocalDateTime since = LocalDate.now().minusDays(days - 1).atStartOfDay();
+
+        List<ActivityDay> result = new ArrayList<>();
+        for (Object[] row : transactionRepository.activityByDay(user.getId(), since)) {
+            LocalDate date = (row[0] instanceof LocalDate d) ? d
+                    : ((java.sql.Date) row[0]).toLocalDate();   // driver có thể trả java.sql.Date
+            result.add(new ActivityDay(date, ((Number) row[1]).longValue()));
+        }
+        return result;
     }
 
     /** % thay đổi từ 'prev' sang 'cur'. Trả null nếu prev = 0 (không tính được). */

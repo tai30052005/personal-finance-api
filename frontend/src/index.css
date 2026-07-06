@@ -412,6 +412,11 @@ th { color: var(--muted); font-weight: 600; }
   padding: 3px 11px; font-size: 12px; color: #35594a; font-weight: 600; margin-top: 7px;
 }
 .gh-chip.wet { background: rgba(251, 233, 231, 0.95); color: #a33d33; }
+.garden-hero.night { background: #0e1a2b; }
+.garden-hero.night .gh-label { color: #9fb8ab; }
+.garden-hero.night .gh-total { color: #eef7f0; }
+.garden-hero.night .gh-chip { background: rgba(16, 28, 20, 0.85); color: #cfe8d4; }
+.garden-hero.night .gh-chip.wet { background: rgba(74, 32, 28, 0.9); color: #f0b3ab; }
 .gh-empty {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px; padding-top: 40px;
@@ -433,6 +438,27 @@ th { color: var(--muted); font-weight: 600; }
   border-top: 1px solid rgba(255, 255, 255, 0.12); padding-top: 12px; margin-top: auto;
 }
 .bc-status { font-size: 14px; font-weight: 600; color: var(--balance-text); }
+
+/* Heatmap "chăm vườn đều tay" + huy hiệu (concept Vườn Xanh) */
+.garden-row2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .garden-row2 { grid-template-columns: 1fr; } }
+.hm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.hm-cell { aspect-ratio: 1; border-radius: 5px; }
+.hm-cell.l0 { background: var(--border); opacity: 0.55; }
+.hm-cell.l1 { background: color-mix(in srgb, var(--primary) 35%, transparent); }
+.hm-cell.l2 { background: color-mix(in srgb, var(--primary) 65%, transparent); }
+.hm-cell.l3 { background: var(--primary); }
+.badge-row { display: flex; justify-content: space-around; gap: 8px; }
+.gbadge { text-align: center; flex: 1; }
+.gbadge-ico {
+  width: 44px; height: 44px; border-radius: 50%; font-size: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary-bg);
+}
+.gbadge.off .gbadge-ico { background: var(--bg); filter: grayscale(1); opacity: 0.45; }
+.gbadge-name { font-size: 12px; font-weight: 600; margin-top: 5px; }
+.gbadge-sub { font-size: 11px; color: var(--muted); }
+.gbadge.off .gbadge-name { color: var(--muted); }
 
 /* Banner "Bác Làm Vườn nhắn" */
 .advisor-banner {

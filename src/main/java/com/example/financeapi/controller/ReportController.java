@@ -39,4 +39,11 @@ public class ReportController {
     public InsightsResponse insights(@RequestParam int month, @RequestParam int year) {
         return reportService.insights(month, year);
     }
+
+    /** GET /api/reports/activity?days=28 — số giao dịch ghi theo ngày (heatmap chăm vườn). */
+    @GetMapping("/activity")
+    public java.util.List<com.example.financeapi.dto.response.ActivityDay> activity(
+            @RequestParam(defaultValue = "28") int days) {
+        return reportService.activity(days);
+    }
 }
