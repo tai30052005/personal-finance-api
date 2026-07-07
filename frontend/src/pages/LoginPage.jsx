@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useConcept } from "../theme/ConceptContext";
+import AuthDecor from "../components/AuthDecor";
 
 export default function LoginPage() {
+  const { concept } = useConcept();
+  const garden = concept === "garden";
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -27,8 +31,10 @@ export default function LoginPage() {
   return (
     <div className="auth-wrap">
       <form className="card auth-card" onSubmit={handleSubmit}>
-        <h1>Đăng nhập</h1>
-        <p className="muted">Personal Finance Manager</p>
+        <h1>{garden ? "🌱 Vườn Xanh" : "💰 Finance"}</h1>
+        <p className="muted">
+          {garden ? "Chào mừng trở lại khu vườn của bạn" : "Personal Finance Manager"}
+        </p>
 
         {error && <div className="alert error">{error}</div>}
 
@@ -41,12 +47,15 @@ export default function LoginPage() {
                onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
 
         <button className="btn primary" type="submit" disabled={loading}>
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          {loading
+            ? (garden ? "Đang mở cổng vườn..." : "Đang đăng nhập...")
+            : (garden ? "Vào vườn" : "Đăng nhập")}
         </button>
 
         <p className="muted center">
-          Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
+          Chưa có tài khoản? <Link to="/register">{garden ? "Gieo hạt (đăng ký)" : "Đăng ký"}</Link>
         </p>
+        <AuthDecor />
       </form>
     </div>
   );
