@@ -18,7 +18,7 @@ export const CONCEPTS = [
 const ConceptContext = createContext(null);
 
 export function ConceptProvider({ children }) {
-  const [concept, setConcept] = useState(() => localStorage.getItem("concept") || "classic");
+  const [concept, setConcept] = useState(() => localStorage.getItem("concept") || "garden");
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
 
   useEffect(() => {

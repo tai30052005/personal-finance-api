@@ -79,6 +79,7 @@ export default function TransactionSection({ month, year, categories, reloadToke
   }
 
   async function handleDelete(id) {
+    if (!window.confirm("Xóa giao dịch này? Thao tác không thể hoàn tác.")) return;
     await deleteTransaction(id);
     onChanged();
   }

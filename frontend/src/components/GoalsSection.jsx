@@ -51,6 +51,10 @@ export default function GoalsSection({ reloadToken, onChanged }) {
   }
 
   async function handleDelete(id) {
+    const msg = garden
+      ? "Nhổ cây này khỏi vườn? Tiến độ đã vun sẽ mất."
+      : "Xóa mục tiêu này? Thao tác không thể hoàn tác.";
+    if (!window.confirm(msg)) return;
     await deleteGoal(id);
     onChanged();
   }

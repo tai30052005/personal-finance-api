@@ -8,7 +8,10 @@ import { getActivity, getGoals } from "../api/finance";
  *  - Huy hiệu SUY RA từ dữ liệu thật — không cần bảng DB riêng.
  */
 const DAY_MS = 24 * 60 * 60 * 1000;
-const iso = (d) => d.toISOString().slice(0, 10);
+// Ngày dạng YYYY-MM-DD theo GIỜ ĐỊA PHƯƠNG (không dùng toISOString vì nó quy về UTC,
+// người dùng UTC+7 ghi buổi tối sẽ bị tính lệch sang ngày hôm sau).
+const iso = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export default function GardenStreakCard({ reloadToken }) {
   const [activity, setActivity] = useState(null);

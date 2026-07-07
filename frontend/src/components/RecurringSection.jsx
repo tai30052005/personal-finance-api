@@ -53,6 +53,7 @@ export default function RecurringSection({ categories, reloadToken, onChanged })
   }
 
   async function handleDelete(id) {
+    if (!window.confirm("Xóa khoản định kỳ này? Các giao dịch đã sinh trước đó vẫn được giữ.")) return;
     await deleteRecurring(id);
     onChanged();
   }
