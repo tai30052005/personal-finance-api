@@ -14,17 +14,26 @@ A full-stack personal finance application: a **Spring Boot 3 / Java 17** REST AP
 
 ## ✨ Key Features
 
+**Core**
 - **JWT Authentication** — stateless register/login with BCrypt password hashing and a per-request token filter.
 - **Per-user data isolation** — every query is scoped to the authenticated user; one user can never read or modify another user's data.
+- **Transactions & categories** — full CRUD with month / keyword / amount filtering and CSV export.
+- **Monthly & yearly reports** — income / expense / balance with a per-category breakdown (SQL aggregation), plus month-over-month insights.
 - **Budget over-spending alerts** — set a monthly limit per expense category and get an `isOverBudget` flag plus the overspent amount.
-- **Monthly reports** — total income / expense / balance for a month, with a per-category breakdown (SQL aggregation).
+
+**Beyond CRUD**
+- **Savings goals** — set a target amount, contribute over time, track progress %.
+- **Recurring transactions** — monthly templates auto-posted by a scheduled job (`@Scheduled`), or run on demand.
+- **AI assistant (Google Gemini)** — natural-language transaction entry (e.g. "cà phê 40k") and a chat advisor that reasons over your real monthly data.
+- **Switchable UI concepts** — a two-axis theming system; ships **"Vườn Xanh"**, a garden metaphor where savings goals grow as procedurally-drawn plants, with a day / night mode and a care-streak heatmap.
+
+**Engineering**
 - **Layered architecture** — Controller → Service → Repository, with DTOs separating the API from entities.
 - **Money done right** — `BigDecimal` for all monetary values (never `double`/`float`) to avoid rounding errors.
+- **Schema migrations** — Flyway-versioned SQL (V1–V4).
 - **Input validation** — Jakarta Bean Validation with a centralized exception handler returning consistent JSON errors.
-- **Automated tests** — JUnit 5 + MockMvc running on an H2 in-memory database.
-- **Dockerized** — the whole stack (API + PostgreSQL) runs with a single command.
-- **Auto-generated API docs** — interactive Swagger UI via springdoc-openapi.
-- **React frontend** — a Vite + React SPA with login, dashboard, transaction management, and visual budget alerts, consuming the same REST API.
+- **Automated tests + CI** — JUnit 5 on an H2 in-memory database; GitHub Actions runs the full suite and the frontend build on every push.
+- **Dockerized** — the whole stack (API + PostgreSQL + frontend) runs with a single command, with auto-generated Swagger UI.
 
 ---
 
@@ -38,9 +47,12 @@ A full-stack personal finance application: a **Spring Boot 3 / Java 17** REST AP
 | Database | PostgreSQL 16 (H2 in-memory for tests) |
 | Migrations | Flyway |
 | Auth | Spring Security + JWT (jjwt) |
+| Scheduling | Spring `@Scheduled` (recurring transactions) |
+| AI | Google Gemini API (natural-language entry + chat advisor) |
 | API docs | springdoc-openapi (Swagger UI) |
 | Build | Maven (backend), npm (frontend) |
 | Testing | JUnit 5, Spring Boot Test, MockMvc |
+| CI | GitHub Actions (tests + frontend build) |
 | Packaging | Docker + Docker Compose |
 
 ---
@@ -56,6 +68,8 @@ flowchart TD
     end
     Repository --> DB[(PostgreSQL)]
     JwtFilter[JwtAuthFilter] -.validates token.-> Controller
+    Scheduler[Scheduled job] -->|auto-post recurring| Service
+    Service -.->|NL parse / chat| Gemini[Google Gemini API]
 ```
 
 A request carrying `Authorization: Bearer <token>` passes through `JwtAuthFilter`, which validates the token and loads the user into the security context. Controllers stay thin; business logic lives in services; data access is isolated in repositories.
@@ -99,7 +113,7 @@ npm run dev
 
 Open **http://localhost:5173**. The Vite dev server calls the backend on port 8080 (CORS enabled for this origin). JWT is stored in `localStorage` and attached to every request via an Axios interceptor.
 
-**Pages:** Login / Register · Dashboard with the monthly report, budget status (with red over-budget alerts), transaction list/add/delete (filtered by month), and category management.
+**Pages:** Login / Register · Overview (garden hero, monthly report, budget status with over-budget alerts, care-streak heatmap) · Transactions (add / edit / delete, month & keyword filters, AI quick-entry, CSV export) · Budgets & Goals · Recurring · Categories · AI Assistant · Settings (switch UI concept and light / dark mode).
 
 ---
 
@@ -133,20 +147,28 @@ curl http://localhost:8080/api/transactions \
 
 | Method | Path | Description | Auth |
 |---|---|---|:---:|
-| POST | `/api/auth/register` | Register a new user | ❌ |
+| POST | `/api/auth/register` | Register a new user, returns JWT | ❌ |
 | POST | `/api/auth/login` | Log in, returns JWT | ❌ |
+| GET | `/api/health` | Health check | ❌ |
 | GET | `/api/me` | Current authenticated user | ✅ |
-| GET | `/api/categories` | List categories | ✅ |
-| POST | `/api/categories` | Create a category | ✅ |
-| PUT | `/api/categories/{id}` | Update a category | ✅ |
-| DELETE | `/api/categories/{id}` | Delete a category | ✅ |
-| GET | `/api/transactions` | List transactions (filter `?month=&year=&categoryId=`) | ✅ |
-| POST | `/api/transactions` | Create a transaction | ✅ |
-| PUT | `/api/transactions/{id}` | Update a transaction | ✅ |
-| DELETE | `/api/transactions/{id}` | Delete a transaction | ✅ |
-| GET | `/api/reports/monthly?month=&year=` | Monthly income/expense/balance report | ✅ |
+| GET · POST · PUT · DELETE | `/api/categories`, `/api/categories/{id}` | Category CRUD | ✅ |
+| GET · POST · PUT · DELETE | `/api/transactions`, `/api/transactions/{id}` | Transaction CRUD (filter `?month=&year=&keyword=&minAmount=&maxAmount=`) | ✅ |
+| POST | `/api/transactions/parse` | AI: parse natural language into transaction(s) | ✅ |
+| GET | `/api/transactions/parse-enabled` | Whether the AI parse feature is configured | ✅ |
+| GET | `/api/transactions/export` | Export transactions as CSV | ✅ |
+| GET | `/api/reports/monthly?month=&year=` | Monthly income / expense / balance report | ✅ |
+| GET | `/api/reports/yearly?year=` | Yearly report | ✅ |
+| GET | `/api/reports/insights?month=&year=` | Month-over-month insights | ✅ |
+| GET | `/api/reports/activity?days=` | Daily logging activity (care-streak heatmap) | ✅ |
 | POST | `/api/budgets` | Set a monthly budget for a category | ✅ |
 | GET | `/api/budgets/status?month=&year=` | Budget status + over-budget alerts | ✅ |
+| GET · POST · PUT · DELETE | `/api/recurring`, `/api/recurring/{id}` | Recurring-transaction CRUD | ✅ |
+| POST | `/api/recurring/{id}/run` | Post a recurring transaction now | ✅ |
+| GET · POST · PUT · DELETE | `/api/goals`, `/api/goals/{id}` | Savings-goal CRUD | ✅ |
+| POST | `/api/goals/{id}/contribute` | Contribute to a savings goal | ✅ |
+| POST | `/api/ai/chat` | AI advisor chat over the current period's data | ✅ |
+
+> Full request/response schemas for all ~33 endpoints are browsable in Swagger UI.
 
 ---
 
@@ -166,7 +188,7 @@ Tests run on an H2 in-memory database — no PostgreSQL required:
 mvn test
 ```
 
-Coverage includes: registration/login (and wrong-password `401`), transaction validation (`amount <= 0` → `400`), per-user data isolation, and the budget over-spending alert.
+The suite (18 tests) covers: registration/login (and wrong-password `401`), transaction validation (`amount <= 0` → `400`), per-user data isolation across transactions / goals / recurring, the budget over-spending alert, savings-goal progress & completion, recurring "run now", and the activity endpoint. The same suite runs in CI on every push.
 
 ---
 
@@ -181,11 +203,14 @@ src/main/java/com/example/financeapi/
 ├── entity/        # JPA entities
 ├── dto/           # Request/response objects
 ├── security/      # JwtUtil, JwtAuthFilter, UserDetailsService
+├── scheduler/     # @Scheduled job posting recurring transactions
+├── ai/            # Google Gemini client (NL parse + chat)
 └── exception/     # GlobalExceptionHandler
 src/main/resources/
 ├── application.yml
-└── db/migration/  # Flyway scripts (V1__init.sql)
+└── db/migration/  # Flyway scripts (V1__init … V4__transaction_receipt)
 src/test/java/...  # JUnit 5 tests
+.github/workflows/ci.yml   # GitHub Actions: backend tests + frontend build
 ```
 
 ---
@@ -195,7 +220,7 @@ src/test/java/...  # JUnit 5 tests
 - Refresh tokens and token revocation.
 - Pagination for transaction listings.
 - Role-based access (admin vs. user).
-- CI pipeline (GitHub Actions) running `mvn test` on each push.
+- Test coverage reporting (JaCoCo) surfaced in CI.
 
 ---
 
