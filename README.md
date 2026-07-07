@@ -1,5 +1,7 @@
 # Personal Finance Management — Full-Stack App
 
+[![CI](https://github.com/tai30052005/personal-finance-api/actions/workflows/ci.yml/badge.svg)](https://github.com/tai30052005/personal-finance-api/actions/workflows/ci.yml)
+
 A full-stack personal finance application: a **Spring Boot 3 / Java 17** REST API plus a **React (Vite)** frontend that consumes it. It supports user authentication with JWT, transaction tracking by category, monthly income/expense reporting, savings goals, recurring transactions, an AI assistant, and an automatic budget-overspending alert system. The backend follows a clean layered architecture with input validation, per-user data isolation, and automated tests. The UI ships switchable design concepts — including **"Vườn Xanh"**, a garden metaphor where savings goals grow as plants.
 
 > A complete personal product, built for real everyday use — clean, enterprise-style design across backend and frontend.

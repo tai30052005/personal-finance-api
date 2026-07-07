@@ -43,7 +43,9 @@ export default function DashboardLayout() {
     getCategories().then(setCategories).catch(() => {});
   }, [reloadToken]);
 
-  const changePeriod = useCallback((m, y) => { setMonth(m); setYear(y); }, []);
+  // Không bọc useCallback: React Compiler tự memo; bọc tay ở đây còn gây cảnh báo
+  // "manual memoization" vì deps suy ra (setMonth/setYear) không khớp mảng rỗng.
+  const changePeriod = (m, y) => { setMonth(m); setYear(y); };
 
   return (
     <div className={"dash-layout" + (navOpen ? " nav-open" : "")}>

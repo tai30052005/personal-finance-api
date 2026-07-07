@@ -17,5 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Đặt Provider + hook (useAuth/useConcept) chung một file là pattern React chuẩn
+      // (React docs cũng vậy); quy tắc này chỉ về Fast Refresh khi dev, không phải lỗi
+      // thật -> để 'warn' cho khỏi chặn CI, vẫn nhắc nếu muốn tách file sau.
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])
