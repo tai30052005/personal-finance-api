@@ -172,9 +172,13 @@ curl http://localhost:8080/api/transactions \
 
 ---
 
-## 🖼 Screenshot
+## 🖼 Screenshots
 
-Swagger UI showing the available endpoints:
+The **"Vườn Xanh"** concept — savings goals grow as plants, budget health shows as weather, and a daily care-streak heatmap tracks your logging habit:
+
+![Vườn Xanh dashboard](docs/garden-ui.png)
+
+Interactive Swagger UI showing the REST endpoints:
 
 ![Swagger UI](docs/swagger-ui.png)
 
